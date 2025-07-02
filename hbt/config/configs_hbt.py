@@ -1450,10 +1450,10 @@ def add_config(
         "normalized_pu_weight": get_shifts("minbias_xs"),
         # TODO: enable again once we have btag cuts
         # "normalized_njet_btag_deepjet_weight": get_shifts(*(f"btag_{unc}" for unc in cfg.x.btag_unc_names)),
-        #"electron_weight": get_shifts("e"),
-        #"muon_weight": get_shifts("mu"),
+        # "electron_weight": get_shifts("e"),
+        # "muon_weight": get_shifts("mu"),
         "tau_weight": get_shifts(*(f"tau_{unc}" for unc in cfg.x.tau_unc_names)),
-        #"tau_trigger_weight": get_shifts("etau_trigger", "mutau_trigger", "tautau_trigger"),
+        # "tau_trigger_weight": get_shifts("etau_trigger", "mutau_trigger", "tautau_trigger"),
     })
 
     # define per-dataset event weights

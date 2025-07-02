@@ -88,7 +88,10 @@ def update_channel_ids(
 
 @selector(
     uses={
-        "Electron.{pt,eta,phi,dxy,dz,pfRelIso03_all,seediEtaOriX,seediPhiOriY,sip3d,miniPFRelIso_all,sieie,hoe,eInvMinusPInv,convVeto,lostHits,promptMVA,jetPtRelv2,jetIdx}","Jet.btagDeepFlavB", # matched_jet.btagDeepB
+        "Electron.{pt,eta,phi,dxy,dz}",
+        "Electron.{pfRelIso03_all,seediEtaOriX,seediPhiOriY,sip3d,miniPFRelIso_all,sieie}",
+        "Electron.{hoe,eInvMinusPInv,convVeto,lostHits,promptMVA,jetPtRelv2,jetIdx}",
+        "Jet.btagDeepFlavB",
         IF_NANO_V9("Electron.mvaFall17V2{Iso_WP80,Iso_WP90}"),
         IF_NANO_GE_V10("Electron.{mvaIso_WP80,mvaIso_WP90}"),
     },
@@ -130,26 +133,28 @@ def electron_selection(
     if is_single or is_cross or True:  # investigate why trigger dependence on providing masks
         min_pt = 26.0 if is_2016 else (31.0 if is_single else 25.0)
         max_eta = 2.5 if is_single else 2.1
-        btagcut = 0.3064 #22 pre
-        btagcut_tight = 0.7217 #22 pre
+        btagcut = 0.3064  # 22 pre
+        # btagcut_tight = 0.7217  # 22 pre
         if self.config_inst.campaign.x.year == 2022 and self.config_inst.campaign.has_tag("postEE"):
-            btagcut = 0.3033 # post
-            btagcut_tight = 0.7134
+            btagcut = 0.3033  # post
+        #    btagcut_tight = 0.7134
         if self.config_inst.campaign.x.year == 2023 and self.config_inst.campaign.has_tag("preBPix"):
-            btagcut = 0.2431 #pre
-            btagcut_tight = 0.6553
+            btagcut = 0.2431  # pre
+        #    btagcut_tight = 0.6553
         if self.config_inst.campaign.x.year == 2023 and self.config_inst.campaign.has_tag("postBPix"):
-            btagcut = 0.2435 #post
-            btagcut_tight = 0.6563
-        closestjet_indicies = events.Electron.jetIdx[:,:]
-        bad_indicies = (closestjet_indicies == -1) # set btag to 0 if no closest jet
-        btag_values = ak.concatenate([0*events.Electron.pt[bad_indicies],events.Jet[closestjet_indicies[~bad_indicies]].btagDeepFlavB],axis=1)
-        atleast_medium = ((mva_iso_wp80 == 1) | (mva_iso_wp90 == 1)) # loose doesnt exist anymore :(
+            btagcut = 0.2435  # post
+        #    btagcut_tight = 0.6563
+        closestjet_indicies = events.Electron.jetIdx[:, :]
+        bad_indicies = (closestjet_indicies == -1)  # set btag to 0 if no closest jet
+        btag_values_bad = 0 * events.Electron.pt[bad_indicies]
+        btag_values_good = events.Jet[closestjet_indicies[~bad_indicies]].btagDeepFlavB
+        btag_values = ak.concatenate([btag_values_bad, btag_values_good], axis=1)
+        atleast_medium = ((mva_iso_wp80 == 1) | (mva_iso_wp90 == 1))  # loose doesnt exist anymore :(
         tight_mask = (
             (abs(events.Electron.eta) < max_eta) &
             (abs(events.Electron.dxy) < 0.05) &
             (abs(events.Electron.dz) < 0.1) &
-            (events.Electron.sip3d < 8 ) &
+            (events.Electron.sip3d < 8) &
             (events.Electron.miniPFRelIso_all < 0.4) &
             (events.Electron.sieie < 0.019) &
             (events.Electron.hoe < 0.1) &
@@ -157,7 +162,7 @@ def electron_selection(
             (events.Electron.convVeto == 1) &
             (events.Electron.lostHits == 0) &
             atleast_medium &
-            (events.Electron.promptMVA>0.3) &
+            (events.Electron.promptMVA > 0.3) &
             (btag_values < btagcut)
         )
         loose_mask = (
@@ -165,38 +170,44 @@ def electron_selection(
             (abs(events.Electron.eta) < max_eta) &
             (abs(events.Electron.dxy) < 0.05) &
             (abs(events.Electron.dz) < 0.1) &
-            (events.Electron.sip3d < 8 ) &
+            (events.Electron.sip3d < 8) &
             (events.Electron.miniPFRelIso_all < 0.4) &
             (events.Electron.lostHits <= 1) &
             atleast_medium
         )
-        fakable_mask = (
-            (events.Electron.pt > 10.0) &
-            (abs(events.Electron.eta) < max_eta) &
-            (abs(events.Electron.dxy) < 0.05) &
-            (abs(events.Electron.dz) < 0.1) &
-            (events.Electron.sip3d < 8 ) &
-            (events.Electron.miniPFRelIso_all < 0.4) &
-            (events.Electron.sieie < 0.019) &
-            (events.Electron.hoe < 0.1) &
-            (events.Electron.eInvMinusPInv > -0.04) &
-            (events.Electron.convVeto == 1) &
-            (events.Electron.lostHits == 0) &
-            ((atleast_medium & (events.Electron.promptMVA>0.3)) | ((mva_iso_wp90 == 1) & (events.Electron.promptMVA<=0.3))) & # loose doesnt exist anymore :(
-            (((btag_values < btagcut) & (events.Electron.promptMVA<0.3)) | ((btag_values < btagcut_tight) & (events.Electron.promptMVA>0.3))) &
-            ((events.Electron.promptMVA>0.3) | ((events.Electron.promptMVA<0.3) & (events.Electron.jetPtRelv2 < (1./1.7))))
-        )
+        # idlepmvapassed = (atleast_medium & (events.Electron.promptMVA > 0.3))
+        # idlepmvafailed = ((mva_iso_wp90 == 1) & (events.Electron.promptMVA <= 0.3))  # loose doesnt exist anymore :(
+        # btaglepmvapassed = ((btag_values < btagcut) & (events.Electron.promptMVA < 0.3))
+        # btaglepmvafailed = ((btag_values < btagcut_tight) & (events.Electron.promptMVA > 0.3))
+        # jetisolepmvapassed = (events.Electron.promptMVA > 0.3)
+        # jetisolepmvafailed = ((events.Electron.promptMVA < 0.3) & (events.Electron.jetPtRelv2 < (1. / 1.7)))
+        # fakable_mask = (
+        #     (events.Electron.pt > 10.0) &
+        #     (abs(events.Electron.eta) < max_eta) &
+        #     (abs(events.Electron.dxy) < 0.05) &
+        #     (abs(events.Electron.dz) < 0.1) &
+        #     (events.Electron.sip3d < 8) &
+        #     (events.Electron.miniPFRelIso_all < 0.4) &
+        #     (events.Electron.sieie < 0.019) &
+        #     (events.Electron.hoe < 0.1) &
+        #     (events.Electron.eInvMinusPInv > -0.04) &
+        #     (events.Electron.convVeto == 1) &
+        #     (events.Electron.lostHits == 0) &
+        #     (idlepmvapassed | idlepmvafailed) &
+        #     (btaglepmvapassed | btaglepmvafailed) &
+        #     (jetisolepmvapassed | jetisolepmvafailed)
+        # )
         if is_2022_post:
             tight_mask = tight_mask & ~(
                 (events.Electron.eta > 1.556) &
                 (events.Electron.seediEtaOriX < 45) &
                 (events.Electron.seediPhiOriY > 72)
             )
-            fakable_mask = fakable_mask & ~(
-                (events.Electron.eta > 1.556) &
-                (events.Electron.seediEtaOriX < 45) &
-                (events.Electron.seediPhiOriY > 72)
-            )
+            # fakable_mask = fakable_mask & ~(
+            #     (events.Electron.eta > 1.556) &
+            #     (events.Electron.seediEtaOriX < 45) &
+            #     (events.Electron.seediPhiOriY > 72)
+            # )
     veto_mask = loose_mask
     analysis_mask = tight_mask & (events.Electron.pt > min_pt)
     control_mask = tight_mask & (events.Electron.pt > 10)
@@ -246,7 +257,11 @@ def electron_trigger_matching(
 
 
 @selector(
-    uses={"Muon.{pt,eta,phi,looseId,mediumId,tightId,pfRelIso04_all,dxy,dz,sip3d,miniPFRelIso_all,jetPtRelv2,promptMVA,jetIdx}","Jet.btagDeepFlavB"},
+    uses={
+        "Muon.{pt,eta,phi,looseId,mediumId,tightId}",
+        "Muon.{pfRelIso04_all,dxy,dz,sip3d,miniPFRelIso_all,jetPtRelv2,promptMVA,jetIdx}",
+        "Jet.btagDeepFlavB",
+    },
     exposed=False,
 )
 def muon_selection(
@@ -277,52 +292,56 @@ def muon_selection(
             min_pt = 23.0 if is_single else 20.0
         else:
             min_pt = 26.0 if is_single else 22.0
-        btagcut = 0.3064 #22 pre
-        btagcut_tight = 0.7217 #22 pre
+        btagcut = 0.3064  # 22 pre
+        # btagcut_tight = 0.7217  # 22 pre
         if self.config_inst.campaign.x.year == 2022 and self.config_inst.campaign.has_tag("postEE"):
-            btagcut = 0.3033 # post
-            btagcut_tight = 0.7134
+            btagcut = 0.3033  # post
+        #    btagcut_tight = 0.7134
         if self.config_inst.campaign.x.year == 2023 and self.config_inst.campaign.has_tag("preBPix"):
-            btagcut = 0.2431 #pre
-            btagcut_tight = 0.6553
+            btagcut = 0.2431  # pre
+        #    btagcut_tight = 0.6553
         if self.config_inst.campaign.x.year == 2023 and self.config_inst.campaign.has_tag("postBPix"):
-            btagcut = 0.2435 #post
-            btagcut_tight = 0.6563
-        closestjet_indicies = events.Muon.jetIdx[:,:]
-        bad_indicies = (closestjet_indicies == -1) # set btag to 0 if no closest jet
-        btag_values = ak.concatenate([0*events.Muon.pt[bad_indicies],events.Jet[closestjet_indicies[~bad_indicies]].btagDeepFlavB],axis=1)
-        atleast_medium = ((events.Muon.mediumId == 1)|(events.Muon.tightId == 1))
+            btagcut = 0.2435  # post
+        #    btagcut_tight = 0.6563
+        closestjet_indicies = events.Muon.jetIdx[:, :]
+        bad_indicies = (closestjet_indicies == -1)  # set btag to 0 if no closest jet
+        btag_values_bad = 0 * events.Muon.pt[bad_indicies]
+        btag_values_good = events.Jet[closestjet_indicies[~bad_indicies]].btagDeepFlavB
+        btag_values = ak.concatenate([btag_values_bad, btag_values_good], axis=1)
+        atleast_medium = ((events.Muon.mediumId == 1) | (events.Muon.tightId == 1))
         atleast_loose = ((events.Muon.looseId == 1) | (events.Muon.mediumId == 1) | (events.Muon.tightId == 1))
         tight_mask = (
             (abs(events.Muon.eta) < 2.4) &
             (abs(events.Muon.dxy) < 0.05) &
             (abs(events.Muon.dz) < 0.1) &
-            (events.Muon.sip3d < 8 ) &
+            (events.Muon.sip3d < 8) &
             (events.Muon.miniPFRelIso_all < 0.4) &
             atleast_medium &
             (btag_values < btagcut) &
-            (events.Muon.promptMVA>0.5)
+            (events.Muon.promptMVA > 0.5)
         )
         loose_mask = (
             (events.Muon.pt > 5) &
             (abs(events.Muon.eta) < 2.4) &
             (abs(events.Muon.dxy) < 0.05) &
             (abs(events.Muon.dz) < 0.1) &
-            (events.Muon.sip3d < 8 ) &
+            (events.Muon.sip3d < 8) &
             (events.Muon.miniPFRelIso_all < 0.4) &
             atleast_loose
         )
-        fakable_mask = (
-            (events.Muon.pt > 10) &
-            (abs(events.Muon.eta) < 2.4) &
-            (abs(events.Muon.dxy) < 0.05) &
-            (abs(events.Muon.dz) < 0.1) &
-            (events.Muon.sip3d < 8 ) &
-            (events.Muon.miniPFRelIso_all < 0.4) &
-            atleast_loose &
-            (((btag_values < btagcut) & (events.Muon.promptMVA<=0.5)) | ((btag_values < btagcut_tight) & (events.Muon.promptMVA>0.5))) &
-            ((events.Muon.promptMVA>0.3) | ((events.Muon.promptMVA<=0.5) & (events.Muon.jetPtRelv2 < (1./1.8))))
-        )
+        # btaglepmvapassed = ((btag_values < btagcut) & (events.Electron.promptMVA < 0.5))
+        # btaglepmvafailed = ((btag_values < btagcut_tight) & (events.Electron.promptMVA > 0.5))
+        # fakable_mask = (
+        #     (events.Muon.pt > 10) &
+        #     (abs(events.Muon.eta) < 2.4) &
+        #     (abs(events.Muon.dxy) < 0.05) &
+        #     (abs(events.Muon.dz) < 0.1) &
+        #     (events.Muon.sip3d < 8) &
+        #     (events.Muon.miniPFRelIso_all < 0.4) &
+        #     atleast_loose &
+        #     (btaglepmvapassed | btaglepmvafailed) &
+        #     ((events.Muon.promptMVA > 0.3) | ((events.Muon.promptMVA <= 0.5) & (events.Muon.jetPtRelv2 < (1. / 1.8))))
+        # )
         veto_mask = loose_mask
         analysis_mask = tight_mask & (events.Muon.pt > min_pt)
         control_mask = tight_mask & (events.Muon.pt > 10)
@@ -599,7 +618,7 @@ def lepton_selection(
     # for this, combine iso and pt values, e.g. iso 255 and pt 32.3 -> 2550032.3
     f = 10**(np.ceil(np.log10(ak.max(events.Tau.pt))) + 2)
     tau_sorting_key = events.Tau[f"raw{self.config_inst.x.tau_tagger}VSjet"] * f + events.Tau.pt
-    tau_sorting_indices = ak.argsort(tau_sorting_key, axis=-1, ascending=False)
+    # tau_sorting_indices = ak.argsort(tau_sorting_key, axis=-1, ascending=False)
 
     # perform each lepton election step separately per trigger, avoid caching
     sel_kwargs = {**kwargs, "call_force": True}
@@ -873,7 +892,6 @@ def lepton_selection(
                 (events.Tau[get_tau_tagger("e")] >= wp_config.tau_vs_e.vvvloose) &
                 (events.Tau[get_tau_tagger("mu")] >= wp_config.tau_vs_mu.vloose)
             )
-
 
             # expect 3 electrons, 3 veto electrons, 0 veto muons, and veto (loose) taus
             is_3e = (
@@ -1735,7 +1753,7 @@ def lepton_selection(
             "leading_taus": leading_taus,
             "eles": sel_electron_indices,
             "mus": sel_muon_indices,
-            "taus": sel_tau_indices
+            "taus": sel_tau_indices,
         },
     )
 

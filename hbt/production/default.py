@@ -67,7 +67,7 @@ def default(self: Producer, events: ak.Array, **kwargs) -> ak.Array:
         if self.has_dep(tau_weights):
             events = self[tau_weights](events, **kwargs)
 
-        #disable some weights for now
+        # disable some weights for now
         # # electron weights
         # if self.has_dep(electron_weights):
         #     events = self[electron_weights](events, **kwargs)
