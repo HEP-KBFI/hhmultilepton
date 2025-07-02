@@ -191,6 +191,30 @@ def add_config(
         "hh_vbf_hvv_hvv_kvm1p6_k2v2p72",
         "hh_vbf_hvv_hvv_kvm1p83_k2v3p57",
         "hh_vbf_hvv_hvv_kvm2p12_k2v3p87",
+        "hh_vbf_htt_hvv_kv1p74_k2v1p37_kl14p4",
+        "hh_vbf_htt_hvv_kvm0p012_k2v0p03_kl10p2",
+        "hh_vbf_htt_hvv_kvm0p758_k2v1p44_klm19p3",
+        "hh_vbf_htt_hvv_kvm0p962_k2v0p959_klm1p43",
+        "hh_vbf_htt_hvv_kvm1p21_k2v1p94_klm0p94",
+        "hh_vbf_htt_hvv_kvm1p6_k2v2p72_klm1p36",
+        "hh_vbf_htt_hvv_kvm1p83_k2v3p57_klm3p39",
+        "hh_vbf_htt_hvv_kvm2p12_k2v3p87_klm5p96",
+        "hh_vbf_htt_htt_kv1p74_k2v1p37_kl14p4",
+        "hh_vbf_htt_htt_kvm0p012_k2v0p03_kl10p2",
+        "hh_vbf_htt_htt_kvm0p758_k2v1p44_klm19p3",
+        "hh_vbf_htt_htt_kvm0p962_k2v0p959_klm1p43",
+        "hh_vbf_htt_htt_kvm1p21_k2v1p94_klm0p94",
+        "hh_vbf_htt_htt_kvm1p6_k2v2p72_klm1p36",
+        "hh_vbf_htt_htt_kvm1p83_k2v3p57_klm3p39",
+        "hh_vbf_htt_htt_kvm2p12_k2v3p87_klm5p96",
+        "hh_vbf_hvv_hvv_kv1p74_k2v1p37_kl14p4",
+        "hh_vbf_hvv_hvv_kvm0p012_k2v0p03_kl10p2",
+        "hh_vbf_hvv_hvv_kvm0p758_k2v1p44_klm19p3",
+        "hh_vbf_hvv_hvv_kvm0p962_k2v0p959_klm1p43",
+        "hh_vbf_hvv_hvv_kvm1p21_k2v1p94_klm0p94",
+        "hh_vbf_hvv_hvv_kvm1p6_k2v2p72_klm1p36",
+        "hh_vbf_hvv_hvv_kvm1p83_k2v3p57_klm3p39",
+        "hh_vbf_hvv_hvv_kvm2p12_k2v3p87_klm5p96",
     ]
     for process_name in process_names:
         if process_name in procs:
@@ -1395,6 +1419,9 @@ def add_config(
             "FatJet.*",
             # additional event info
             "deterministic_seed", "Jet.deterministic_seed",
+            # gen level
+            "GenPart.*",
+            "GenJet.*",
             # keep all columns added during selection, but skip cutflow feature
             ColumnCollection.ALL_FROM_SELECTOR,
             skip_column("cutflow.*"),
@@ -1423,10 +1450,10 @@ def add_config(
         "normalized_pu_weight": get_shifts("minbias_xs"),
         # TODO: enable again once we have btag cuts
         # "normalized_njet_btag_deepjet_weight": get_shifts(*(f"btag_{unc}" for unc in cfg.x.btag_unc_names)),
-        "electron_weight": get_shifts("e"),
-        "muon_weight": get_shifts("mu"),
+        #"electron_weight": get_shifts("e"),
+        #"muon_weight": get_shifts("mu"),
         "tau_weight": get_shifts(*(f"tau_{unc}" for unc in cfg.x.tau_unc_names)),
-        "tau_trigger_weight": get_shifts("etau_trigger", "mutau_trigger", "tautau_trigger"),
+        #"tau_trigger_weight": get_shifts("etau_trigger", "mutau_trigger", "tautau_trigger"),
     })
 
     # define per-dataset event weights

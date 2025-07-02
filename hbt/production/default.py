@@ -67,17 +67,18 @@ def default(self: Producer, events: ak.Array, **kwargs) -> ak.Array:
         if self.has_dep(tau_weights):
             events = self[tau_weights](events, **kwargs)
 
-        # electron weights
-        if self.has_dep(electron_weights):
-            events = self[electron_weights](events, **kwargs)
+        #disable some weights for now
+        # # electron weights
+        # if self.has_dep(electron_weights):
+        #     events = self[electron_weights](events, **kwargs)
 
-        # muon weights
-        if self.has_dep(muon_weights):
-            events = self[muon_weights](events, **kwargs)
+        # # muon weights
+        # if self.has_dep(muon_weights):
+        #     events = self[muon_weights](events, **kwargs)
 
-        # trigger weights
-        if self.has_dep(trigger_weights):
-            events = self[trigger_weights](events, **kwargs)
+        # # trigger weights
+        # if self.has_dep(trigger_weights):
+        #     events = self[trigger_weights](events, **kwargs)
 
         # top pt weight
         if self.has_dep(top_pt_weight):

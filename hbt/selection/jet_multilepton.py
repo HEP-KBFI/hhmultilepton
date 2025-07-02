@@ -15,7 +15,7 @@ from columnflow.columnar_util import (
 from columnflow.util import maybe_import, InsertableDict
 
 from hbt.util import IF_RUN_2
-from hbt.production.hhbtag import hhbtag
+#from hbt.production.hhbtag import hhbtag
 from hbt.selection.lepton import trigger_object_matching
 
 np = maybe_import("numpy")
@@ -24,11 +24,14 @@ ak = maybe_import("awkward")
 
 @selector(
     uses={
-        hhbtag,
+       # hhbtag,
         "trigger_ids", "TrigObj.{pt,eta,phi}",
         "Jet.{pt,eta,phi,mass,jetId}", IF_RUN_2("Jet.puId"),
         "FatJet.{pt,eta,phi,mass,msoftdrop,jetId,subJetIdx1,subJetIdx2}",
         "SubJet.{pt,eta,phi,mass,btagDeepB}",
+        "Electron.{pt,eta,phi,mass}",
+        "Muon.{pt,eta,phi,mass}",
+        "Tau.{pt,eta,phi,mass}",
     },
     produces={
         # new columns
@@ -65,7 +68,9 @@ def jet_selection(
     # common ak4 jet mask for normal and vbf jets
     ak4_mask = (
         (events.Jet.jetId == 6) &  # tight plus lepton veto
-        ak.all(events.Jet.metric_table(lepton_results.x.leading_taus) > 0.5, axis=2)
+        ak.all(events.Jet.metric_table(events.Tau[lepton_results.x.taus]) > 0.5, axis=2) &
+        ak.all(events.Jet.metric_table(events.Muon[lepton_results.x.mus]) > 0.5, axis=2) &
+        ak.all(events.Jet.metric_table(events.Electron[lepton_results.x.eles]) > 0.5, axis=2)
     )
 
     # puId for run 2
@@ -87,8 +92,9 @@ def jet_selection(
     #
 
     # get the hhbtag values per jet per event
-    hhbtag_scores = self[hhbtag](events, default_mask, lepton_results.x.lepton_pair, **kwargs)
-
+    #hhbtag_scores = self[hhbtag](events, default_mask, lepton_results.x.lepton_pair, **kwargs)
+    # just set hhbtag to zero for now, later remove
+    hhbtag_scores = 0*events.Jet.pt
     # create a mask where only the two highest scoring hhbjets are selected
     score_indices = ak.argsort(hhbtag_scores, axis=1, ascending=False)
     hhbjet_mask = mask_from_indices(score_indices[:, :2], hhbtag_scores)
@@ -182,7 +188,9 @@ def jet_selection(
         (events.FatJet.msoftdrop > 30.0) &
         (events.FatJet.pt > 250.0) &  # ParticleNet not trained for lower values
         (abs(events.FatJet.eta) < 2.5) &
-        ak.all(events.FatJet.metric_table(lepton_results.x.leading_taus) > 0.8, axis=2) &
+        ak.all(events.FatJet.metric_table(events.Tau[lepton_results.x.taus]) > 0.8, axis=2) &
+        ak.all(events.FatJet.metric_table(events.Muon[lepton_results.x.mus]) > 0.8, axis=2) &
+        ak.all(events.FatJet.metric_table(events.Electron[lepton_results.x.eles]) > 0.8, axis=2) &
         (events.FatJet.subJetIdx1 >= 0) &
         (events.FatJet.subJetIdx2 >= 0)
     )
@@ -217,6 +225,7 @@ def jet_selection(
 
     # build vectors of vbf jets representing all combinations and apply selections
     vbf1, vbf2 = ak.unzip(ak.combinations(events.Jet[vbf_mask], 2, axis=1))
+
     vbf_pair = ak.concatenate([vbf1[..., None], vbf2[..., None]], axis=2)
     vbfjj = vbf1 + vbf2
     vbf_pair_mask = (
