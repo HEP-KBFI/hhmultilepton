@@ -7,8 +7,8 @@ Config-related object definitions and utils.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 
+from dataclasses import dataclass
 from order import UniqueObject, TagMixin
 from order.util import typed
 

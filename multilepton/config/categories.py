@@ -19,7 +19,7 @@ def add_categories(config: od.Config) -> None:
     # root category (-1 has special meaning in cutflow)
     root_cat = add_category(config, name="all", id=-1, selection="cat_all", label="")
     _add_category = functools.partial(add_category, parent=root_cat)
-
+    
     # lepton channels
     _add_category(config, name="etau", id=1, selection="cat_etau", label=config.channels.n.etau.label)
     _add_category(config, name="mutau", id=2, selection="cat_mutau", label=config.channels.n.mutau.label)
@@ -27,6 +27,7 @@ def add_categories(config: od.Config) -> None:
     _add_category(config, name="ee", id=4, selection="cat_ee", label=config.channels.n.ee.label)
     _add_category(config, name="mumu", id=5, selection="cat_mumu", label=config.channels.n.mumu.label)
     _add_category(config, name="emu", id=6, selection="cat_emu", label=config.channels.n.emu.label)
+    
     # new multilepton channels
     _add_category(config, name="c3e", id=14, selection="cat_c3e", label=config.channels.n.c3e.label)
     _add_category(config, name="c2emu", id=15, selection="cat_c2emu", label=config.channels.n.c2emu.label)
@@ -37,6 +38,7 @@ def add_categories(config: od.Config) -> None:
     _add_category(config, name="c2e2mu", id=20, selection="cat_c2e2mu", label=config.channels.n.c2e2mu.label)
     _add_category(config, name="ce3mu", id=21, selection="cat_ce3mu", label=config.channels.n.ce3mu.label)
     _add_category(config, name="c4mu", id=22, selection="cat_c4mu", label=config.channels.n.c4mu.label)
+    
     # to be implemented
     _add_category(config, name="c3etau", id=23, selection="cat_c3etau", label=config.channels.n.c3etau.label)
     _add_category(config, name="c2emutau", id=24, selection="cat_c2emutau", label=config.channels.n.c2emutau.label)
@@ -64,23 +66,66 @@ def add_categories(config: od.Config) -> None:
     _add_category(config, name="ceormu_bveto", id=15000, selection="cat_e_or_mu_bveto",
         label=r"e or $\mu$ bveto on", tags={"ceormu_bveto"})
     # tight/nontight
-    _add_category(config, name="tight_bdt", id=11000, selection="cat_tight_bdt", label="tight", tags={"tight_bdt"})
-    _add_category(config, name="nontight_bdt", id=12000,
-        selection="cat_nontight_bdt", label="fakeable", tags={"nontight_bdt"})
+    _add_category(config,
+        name="tight_bdt",
+        id=11000,
+        selection="cat_tight_bdt",
+        label="tight",
+        tags={"tight_bdt"},
+    )
+    _add_category(config,
+        name="nontight_bdt",
+        id=12000,
+        selection="cat_nontight_bdt",
+        label="fakeable",
+        tags={"nontight_bdt"},
+    )
     # trigmatch
-    _add_category(config, name="trigmatch_bdt", id=13000,
-        selection="cat_trigmatch_bdt", label="trigger matched", tags={"trigmatch_bdt"})
-    _add_category(config, name="nontrigmatch_bdt", id=14000,
-        selection="cat_nontrigmatch_bdt", label="trigger unmatched", tags={"nontrigmatch_bdt"})
-
+    _add_category(
+        config,
+        name="trigmatch_bdt",
+        id=13000,
+        selection="cat_trigmatch_bdt",
+        label="trigger matched",
+        tags={"trigmatch_bdt"},
+    )
+    _add_category(config,
+        name="nontrigmatch_bdt",
+        id=14000,
+        selection="cat_nontrigmatch_bdt",
+        label="trigger unmatched",
+        tags={"nontrigmatch_bdt"},
+    )
     # tight/nontight
-    _add_category(config, name="tight", id=10001, selection="cat_tight", label="tight", tags={"tight"})
-    _add_category(config, name="nontight", id=10002, selection="cat_nontight", label="fakeable", tags={"nontight"})
+    _add_category(config,
+        name="tight",
+        id=10001,
+        selection="cat_tight",
+        label="tight",
+        tags={"tight"},
+    )
+    _add_category(config,
+        name="nontight",
+        id=10002,
+        selection="cat_nontight",
+        label="fakeable",
+        tags={"nontight"},
+    )
     # trigmatch
-    _add_category(config, name="trigmatch",
-        id=10003, selection="cat_trigmatch", label="trigger matched", tags={"trigmatch"})
-    _add_category(config, name="nontrigmatch",
-        id=10004, selection="cat_nontrigmatch", label="trigger unmatched", tags={"nontrigmatch"})
+    _add_category(config,
+        name="trigmatch",
+        id=10003,
+        selection="cat_trigmatch",
+        label="trigger matched",
+        tags={"trigmatch"},
+    )
+    _add_category(config,
+        name="nontrigmatch",
+        id=10004,
+        selection="cat_nontrigmatch",
+        label="trigger unmatched",
+        tags={"nontrigmatch"},
+    )
     ######################################################
 
     # qcd regions
@@ -172,6 +217,7 @@ def add_categories(config: od.Config) -> None:
         # kwargs_fn=functools.partial(kwargs_fn, add_qcd_group=True),
     # )
 
+    # ##############################################################################
     # Creating category combinations
     # categories_sig_sideband = {
         # "channel": CategoryGroup(["c3e", "c3mu", "c2emu", "ce2mu", "c4e", "c4mu", "c2e2mu",

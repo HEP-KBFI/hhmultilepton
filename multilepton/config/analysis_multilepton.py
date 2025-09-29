@@ -32,7 +32,7 @@ analysis_multilepton.x.versions = {}
 # (used in cf.HTCondorWorkflow)
 analysis_multilepton.x.bash_sandboxes = [
     "$CF_BASE/sandboxes/cf.sh",
-    "$MULTILEPTON_BASE/sandboxes/venv_columnar.sh",
+    "$CF_BASE/sandboxes/venv_columnar.sh",
     "$MULTILEPTON_BASE/sandboxes/venv_columnar_tf.sh",
 ]
 
@@ -74,7 +74,6 @@ add_binning_hooks(analysis_multilepton)
 #
 # define configs
 #
-
 
 def add_lazy_config(
     *,

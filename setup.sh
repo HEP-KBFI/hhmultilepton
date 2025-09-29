@@ -10,23 +10,20 @@ setup_multilepton() {
     # The setup also handles the installation of the software stack via virtual environments, and
     # optionally an interactive setup where the user can configure certain variables.
     #
-    #
     # Arguments:
     #   1. The name of the setup. "default" (which is itself the default when no name is set)
     #      triggers a setup with good defaults, avoiding all queries to the user and the writing of
     #      a custom setup file. See "interactive_setup()" for more info.
     #
-    #
     # Optinally preconfigured environment variables:
     #   None yet.
-    #
     #
     # Variables defined by the setup and potentially required throughout the analysis:
     #   MULTILEPTON_BASE
     #       The absolute analysis base directory. Used to infer file locations relative to it.
     #   MULTILEPTON_SETUP
     #       A flag that is set to 1 after the setup was successful.
-
+    
     #
     # load cf setup helpers
     #
@@ -36,6 +33,22 @@ setup_multilepton() {
     local this_dir="$( cd "$( dirname "${this_file}" )" && pwd )"
     local cf_base="${this_dir}/modules/columnflow"
     CF_SKIP_SETUP="true" source "${cf_base}/setup.sh" "" || return "$?"
+    
+    #
+    # prepare local variables
+    #
+    #forcing this 
+    if [ $# -lt 1 ]; then
+        echo "require exactly one argument"
+        echo "usage : source setup.sh <setup_name>"
+        echo "Example: source setup.sh dev"
+        return 1
+    fi
+
+    local orig="${PWD}"
+    local setup_name="$1"
+    local setup_is_default="false"
+    [ "${setup_name}" = "default" ] && setup_is_default="true"
 
     #
     # prevent repeated setups
@@ -47,15 +60,6 @@ setup_multilepton() {
         >&2 echo "re-running the setup requires a new shell"
         return "1"
     fi
-
-    #
-    # prepare local variables
-    #
-
-    local orig="${PWD}"
-    local setup_name="${1:-default}"
-    local setup_is_default="false"
-    [ "${setup_name}" = "default" ] && setup_is_default="true"
 
     # zsh options
     if ${shell_is_zsh}; then

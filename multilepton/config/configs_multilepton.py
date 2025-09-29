@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """
-Configuration of the HH → bb𝜏𝜏 analysis.
+Configuration of the HH → multi-leptons analysis.
 """
 
 from __future__ import annotations
@@ -10,25 +10,25 @@ import os
 import re
 import itertools
 import functools
-
 import yaml
 import law
+
 import order as od
+
 from scinum import Number
 
 from columnflow.tasks.external import ExternalFile as Ext
 from columnflow.util import DotDict, dev_sandbox
+from columnflow.columnar_util import ColumnCollection, skip_column
 from columnflow.config_util import (
     get_root_processes_from_campaign, add_shift_aliases, get_shifts_from_sources, verify_config_processes,
 )
-from columnflow.columnar_util import ColumnCollection, skip_column
 
+from multilepton.config.styles import stylize_processes
 
-thisdir = os.path.dirname(os.path.abspath(__file__))
 
 logger = law.logger.get_logger(__name__)
-
-import os
+thisdir = os.path.dirname(os.path.abspath(__file__))
 afsbase = "/afs/cern.ch/"
 cvmfsbase = "/cvmfs/"
 if not os.path.isdir(afsbase):
@@ -38,7 +38,7 @@ if not os.path.isdir(afsbase):
         cvmfsbase = "/local/tolange/afsmirror/cvmfs/"
     else:
         raise Exception(
-            "afs not reachable and no mirrir set, please fix configs_multilepton and make external files available!",
+            "afs not reachable and no mirror is set, please fix configs_multilepton and make external files available!",
         )
 
 
@@ -54,14 +54,11 @@ def add_config(
     run = campaign.x.run
     year = campaign.x.year
     year2 = year % 100
-
     # some validations
     assert run in {2, 3}
     assert year in {2016, 2017, 2018, 2022, 2023}
-
     # get all root processes
     procs = get_root_processes_from_campaign(campaign)
-
     # create a config by passing the campaign, so id and name will be identical
     cfg = od.Config(
         name=config_name,
@@ -75,7 +72,6 @@ def add_config(
     ################################################################################################
     # helpers
     ################################################################################################
-
     # helper to enable processes / datasets only for a specific era
     def _match_era(
         *,
@@ -110,7 +106,6 @@ def add_config(
     ################################################################################################
     # processes
     ################################################################################################
-
     # add custom processes
     if not sync_mode:
         cfg.add_process(
@@ -302,7 +297,6 @@ def add_config(
         cfg.add_process(proc)
 
     # configure colors, labels, etc
-    from multilepton.config.styles import stylize_processes
     stylize_processes(cfg)
 
     ################################################################################################
@@ -1550,16 +1544,25 @@ def add_config(
         if isinstance(value, dict):
             value = DotDict.wrap(value)
         cfg.x.external_files[name] = value
-
+    
+    jsonpog_path = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/"
     if run == 2:
         json_postfix = ""
         if year == 2016:
             json_postfix = f"{'pre' if campaign.has_tag('preVFP') else 'post'}VFP"
-        json_pog_era = f"{year}{json_postfix}_UL"
-        json_mirror = afsbase + "/user/m/mrieger/public/mirrors/jsonpog-integration-b7a48c75"
+        jsonpog_era = f"{year}{json_postfix}_UL"
+        tauPOGJsonFile = "tau.json.gz"
+        metPOGJsonFile = "met.json.gz"
     elif run == 3:
-        json_pog_era = f"{year}_Summer{year2}{campaign.x.postfix}"
-        json_mirror = afsbase + "/user/m/mrieger/public/mirrors/jsonpog-integration-b7a48c75"
+        if year == 2022:
+            met_pog_suffix = f"{year}_{year}{'' if campaign.has_tag('preEE') else 'EE'}"
+            tau_pog_suffix = f"{'pre' if campaign.has_tag('preEE') else 'post'}EE"
+        elif year == 2023:
+            met_pog_suffix = f"_{year}_{year}{'' if campaign.has_tag('preBPix') else 'BPix'}"
+            tau_pog_suffix = f"{'pre' if campaign.has_tag('preBPix') else 'post'}BPix"
+        tauPOGJsonFile = f"tau_DeepTau2018v2p5_{year}_{tau_pog_suffix}.json.gz"
+        metPOGJsonFile = f"met_xyCorrections_{met_pog_suffix}.json.gz"
+        jsonpog_era = f"{year}_Summer{year2}{campaign.x.postfix}"
         trigger_json_mirror = "https://gitlab.cern.ch/cclubbtautau/AnalysisCore/-/archive/59ae66c4a39d3e54afad5733895c33b1fb511c47/AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47.tar.gz"  # noqa: E501
         campaign_tag = ""
         for tag in ("preEE", "postEE", "preBPix", "postBPix"):
@@ -1573,53 +1576,49 @@ def add_config(
 
     # common files
     # (versions in the end are for hashing in cases where file contents changed but paths did not)
+    # golden 2022: https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun3Analysis?rev=161#Year_2022
+    # golden 2023: https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun3Analysis?rev=161#Year_2023
+    # normtag 2022: https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun3Analysis?rev=161#Year_2022
+    # normtag 2023: https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun3Analysis?rev=161#Year_2023
     add_external("lumi", {
         "golden": {
-            2016: (afsbase + "/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Legacy_2016/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt", "v1"),  # noqa: E501
-            2017: (afsbase + "/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/Legacy_2017/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt", "v1"),  # noqa: E501
-            2018: (afsbase + "/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions18/13TeV/Legacy_2018/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt", "v1"),  # noqa: E501
-            # https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun3Analysis?rev=161#Year_2022
+            2016: ("https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions16/13TeV/Legacy_2016/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt", "v1"),  # noqa: E501
+            2017: ("https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions17/13TeV/Legacy_2017/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt", "v1"),  # noqa: E501
+            2018: ("https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions18/13TeV/Legacy_2018/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt", "v1"),  # noqa: E501
             2022: ("https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions22/Cert_Collisions2022_355100_362760_Golden.json", "v1"),  # noqa: E501
-            # https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun3Analysis?rev=161#Year_2023
             2023: ("https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions23/Cert_Collisions2023_366442_370790_Golden.json", "v1"),  # noqa: E501
         }[year],
         "normtag": {
-            2016: (afsbase + "/user/l/lumipro/public/Normtags/normtag_PHYSICS.json", "v1"),
-            2017: (afsbase + "/user/l/lumipro/public/Normtags/normtag_PHYSICS.json", "v1"),
-            2018: (afsbase + "/user/l/lumipro/public/Normtags/normtag_PHYSICS.json", "v1"),
-            # https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun3Analysis?rev=161#Year_2022
-            2022: (cvmfsbase + "/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_BRIL.json", "v1"),
-            # https://twiki.cern.ch/twiki/bin/view/CMS/PdmVRun3Analysis?rev=161#Year_2023
-            2023: (cvmfsbase + "/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_BRIL.json", "v1"),
+            2016: ("/cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json", "v1"),
+            2017: ("/cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json", "v1"),
+            2018: ("/cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json", "v1"),
+            2022: ("https://cms-service-dqmdc.web.cern.ch/CAF/certification/Run3/normtag_BRIL.json", "v1"),
+            2023: ("https://cms-service-dqmdc.web.cern.ch/CAF/certification/Run3/normtag_BRIL.json", "v1"),
         }[year],
     })
+    
     # pileup weight corrections
-    add_external("pu_sf", (f"{json_mirror}/POG/LUM/{json_pog_era}/puWeights.json.gz", "v1"))
+    add_external("pu_sf", (f"{jsonpog_path}/POG/LUM/{jsonpog_era}/puWeights.json.gz", "v1"))
     # jet energy correction
-    add_external("jet_jerc", (f"{json_mirror}/POG/JME/{json_pog_era}/jet_jerc.json.gz", "v1"))
+    add_external("jet_jerc", (f"{jsonpog_path}/POG/JME/{jsonpog_era}/jet_jerc.json.gz", "v1"))
     # jet veto map
-    add_external("jet_veto_map", (f"{json_mirror}/POG/JME/{json_pog_era}/jetvetomaps.json.gz", "v1"))
+    add_external("jet_veto_map", (f"{jsonpog_path}/POG/JME/{jsonpog_era}/jetvetomaps.json.gz", "v1"))
     # btag scale factor
-    add_external("btag_sf_corr", (f"{json_mirror}/POG/BTV/{json_pog_era}/btagging.json.gz", "v1"))
-    # Tobias' tautauNN (https://github.com/uhh-cms/tautauNN)
-    add_external("res_pdnn", (afsbase + "/work/m/mrieger/public/hbt/external_files/res_models/res_prod3/model_fold0.tgz", "v1"))  # noqa: E501
-    # non-parametric (flat) training up to mX = 800 GeV
-    add_external("res_dnn", (afsbase + "/work/m/mrieger/public/hbt/external_files/res_models/res_prod3_nonparam/model_fold0.tgz", "v1"))  # noqa: E501
+    add_external("btag_sf_corr", (f"{jsonpog_path}/POG/BTV/{jsonpog_era}/btagging.json.gz", "v1"))
+    # muon scale factors
+    add_external("muon_sf", (f"{jsonpog_path}/POG/MUO/{jsonpog_era}/muon_Z.json.gz", "v1"))
+    # electron scale factors
+    add_external("electron_sf", (f"{jsonpog_path}/POG/EGM/{jsonpog_era}/electron.json.gz", "v1"))
+    # met phi correction
+    add_external("met_phi_corr", (f"{jsonpog_path}/POG/JME/{jsonpog_era}/{metPOGJsonFile}", "v1"))
+    # tau energy correction and scale factors
+    add_external("tau_sf", (f"{jsonpog_path}/POG/TAU/{jsonpog_era}/{tauPOGJsonFile}", "v1"))
 
     # run specific files
     if run == 2:
-        # tau energy correction and scale factors
-        add_external("tau_sf", (f"{json_mirror}/POG/TAU/{json_pog_era}/tau.json.gz", "v1"))
         # tau trigger scale factors
-        add_external("tau_trigger_sf", (f"{json_mirror}/POG/TAU/{json_pog_era}/tau.json.gz", "v1"))
-        # electron scale factors
-        add_external("electron_sf", (f"{json_mirror}/POG/EGM/{json_pog_era}/electron.json.gz", "v1"))
-        # muon scale factors
-        add_external("muon_sf", (f"{json_mirror}/POG/MUO/{json_pog_era}/muon_Z.json.gz", "v1"))
-        # met phi correction
-        add_external("met_phi_corr", (f"{json_mirror}/POG/JME/{json_pog_era}/met.json.gz", "v1"))
+        add_external("tau_trigger_sf", (f"{jsonpog_path}/POG/TAU/{jsonpog_era}/tau.json.gz", "v1"))
         # hh-btag repository with TF saved model directories trained on Run2 UL samples
-        add_external("electron_ss", (f"{json_mirror}/POG/EGM/{json_pog_era}/electronSS.json.gz", "v1"))
         add_external("hh_btag_repo", Ext(
             afsbase + "/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
             subpaths=DotDict(even="hh-btag-master/models/HHbtag_v2_par_0", odd="hh-btag-master/models/HHbtag_v2_par_1"),  # noqa: E501
@@ -1627,32 +1626,17 @@ def add_config(
         ))
 
     elif run == 3:
-        # updated jet id
-        add_external("jet_id", (f"{json_mirror}/POG/JME/{json_pog_era}/jetid.json.gz", "v1"))
-        # muon scale factors
-        add_external("muon_sf", (f"{json_mirror}/POG/MUO/{json_pog_era}/muon_Z.json.gz", "v1"))
-        # electron scale factors
-        add_external("electron_sf", (f"{json_mirror}/POG/EGM/{json_pog_era}/electron.json.gz", "v1"))
         # electron energy correction and smearing
-        add_external("electron_ss", (f"{json_mirror}/POG/EGM/{json_pog_era}/electronSS_EtDependent.json.gz", "v1"))
+        add_external("electron_ss", (f"{jsonpog_path}/POG/EGM/{jsonpog_era}/electronSS_EtDependent.json.gz", "v1"))
+        # updated jet id
+        add_external("jet_id", (f"{jsonpog_path}/POG/JME/{jsonpog_era}/jetid.json.gz", "v1"))
         # hh-btag repository with TF saved model directories trained on 22+23 samples using pnet
         add_external("hh_btag_repo", Ext(
             afsbase + "/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
             subpaths=DotDict(even="hh-btag-master/models/HHbtag_v3_par_0", odd="hh-btag-master/models/HHbtag_v3_par_1"),  # noqa: E501
             version="v3",
         ))
-        # tau energy correction and scale factors
-        # TODO: remove tau pog mirror once integrated centrally
-        json_mirror_tau_pog = afsbase + "/work/m/mrieger/public/mirrors/jsonpog-integration-taupog"
-        if year == 2022:
-            tau_pog_era = f"{year}_{'pre' if campaign.has_tag('preEE') else 'post'}EE"
-            tau_pog_era_cclub = f"{year}{'pre' if campaign.has_tag('preEE') else 'post'}EE"
-            tau_pog_dir = tau_pog_era
-        elif year == 2023:
-            tau_pog_era = f"{year}_{'pre' if campaign.has_tag('preBPix') else 'post'}BPix"
-            tau_pog_era_cclub = f"{year}{'pre' if campaign.has_tag('preBPix') else 'post'}BPix"
-            tau_pog_dir = str(year)  # yes, it's inconsistent w.r.t. 2022
-        add_external("tau_sf", (f"{json_mirror_tau_pog}/POG/TAU/{tau_pog_dir}/tau_DeepTau2018v2p5_{tau_pog_era}.json.gz", "v1"))  # noqa: E501
+        
         # dy weight and recoil corrections
         add_external("dy_weight_sf", (afsbase + "/work/m/mrieger/public/mirrors/external_files/DY_pTll_weights_v2.json.gz", "v1"))  # noqa: E501
         add_external("dy_recoil_sf", (afsbase + "/work/m/mrieger/public/mirrors/external_files/Recoil_corrections_v2.json.gz", "v1"))  # noqa: E501
@@ -1666,7 +1650,7 @@ def add_config(
                 cross_muon=f"{trigger_sf_internal_subpath}/{cclub_eras}/CrossMuTauHlt.json",
                 electron=f"{trigger_sf_internal_subpath}/{cclub_eras}/electronHlt.json",
                 cross_electron=f"{trigger_sf_internal_subpath}/{cclub_eras}/CrossEleTauHlt.json",
-                tau=f"{trigger_sf_internal_subpath}/{cclub_eras}/tau_trigger_DeepTau2018v2p5_{tau_pog_era_cclub}.json",
+                tau=f"{trigger_sf_internal_subpath}/{cclub_eras}/tau_trigger_DeepTau2018v2p5_{year}{tau_pog_suffix}.json",
                 jet=f"{trigger_sf_internal_subpath}/{cclub_eras}/ditaujet_jetleg_SFs_{campaign_tag}.json",
             ),
             version="v1",

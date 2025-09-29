@@ -17,11 +17,9 @@ from columnflow.production.cms.seeds import (
     deterministic_event_seeds, deterministic_jet_seeds, deterministic_electron_seeds,
 )
 from columnflow.util import maybe_import
-
 from multilepton.util import IF_RUN_2, IF_RUN_3, IF_DATA, IF_MC
 
 ak = maybe_import("awkward")
-
 
 # custom seed producer skipping GenPart fields
 custom_deterministic_event_seeds_mc = deterministic_event_seeds.derive(
@@ -157,21 +155,17 @@ def default_init(self: Calibrator, **kwargs) -> None:
         add_calib_cls("eec_nominal", eec, cls_dict={
             "with_uncertainties": False,
         })
-
         add_calib_cls("deterministic_eer_full", eer, cls_dict={
             "deterministic_seed_index": 0,
         })
-
         add_calib_cls("deterministic_eer_nominal", eer, cls_dict={
             "deterministic_seed_index": 0,
             "with_uncertainties": False,
         })
-
         # derive met_phi calibrator (currently only used in run 2)
         add_calib_cls("met_phi", met_phi, cls_dict={
             "met_name": met_name,
         })
-
         # change the flag
         self.config_inst.set_aux(flag, True)
 

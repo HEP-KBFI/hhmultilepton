@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """
-Exemplary selection methods.
+HH -> multi-leptons selection methods.
 """
 
 from columnflow.categorization import Categorizer, categorizer
@@ -9,19 +9,16 @@ from columnflow.util import maybe_import
 
 ak = maybe_import("awkward")
 
-
 #
-# dummy selector
+# all events
 #
 
 @categorizer(uses={"event"})
 def cat_all(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
-    # keep all events
     return events, ak.ones_like(events.event) == 1
 
-
 #
-# lepton channels
+# di-lepton channels
 #
 
 @categorizer(uses={"channel_id"})
@@ -53,8 +50,9 @@ def cat_mumu(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, a
 def cat_emu(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
     return events, events.channel_id == self.config_inst.channels.n.emu.id
 
-# multilepton
-
+#
+# multileptons channels
+#
 
 @categorizer(uses={"channel_id"})
 def cat_c3e(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:

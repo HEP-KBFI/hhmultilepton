@@ -6,10 +6,9 @@ Style definitions.
 
 from __future__ import annotations
 
-from collections import defaultdict
-
 import order as od
 
+from collections import defaultdict
 from columnflow.util import DotDict, try_int
 
 

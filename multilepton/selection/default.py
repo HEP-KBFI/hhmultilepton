@@ -29,9 +29,9 @@ from columnflow.hist_util import create_hist_from_variables, fill_hist
 from columnflow.util import maybe_import, DotDict
 from columnflow.types import Iterable
 
-from multilepton.selection.trigger_multilepton import trigger_selection
-from multilepton.selection.lepton_multilepton import lepton_selection
-from multilepton.selection.jet_multilepton import jet_selection
+from multilepton.selection.trigger import trigger_selection
+from multilepton.selection.lepton import lepton_selection
+from multilepton.selection.jet import jet_selection
 import multilepton.production.processes as process_producers
 from multilepton.production.btag import btag_weights_deepjet, btag_weights_pnet
 from multilepton.production.features import cutflow_features
