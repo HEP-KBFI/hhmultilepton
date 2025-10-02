@@ -1965,12 +1965,17 @@ def lepton_selection(
         objects={
             "Electron": {
                 "Electron": sel_electron_indices,
+                "ElectronLoose": sel_looseelectron_indices,
+                "ElectronTight": sel_tightelectron_indices,
             },
             "Muon": {
                 "Muon": sel_muon_indices,
+                "MuonLoose": sel_loosemuon_indices,
+                "MuonTight": sel_tightmuon_indices,
             },
             "Tau": {
                 "Tau": sel_tau_indices,
+                "TauIso": sel_isotau_indices,
             },
         },
         aux={
