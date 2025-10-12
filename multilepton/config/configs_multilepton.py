@@ -105,7 +105,7 @@ def add_config(
         return list(filter(bool, values or [])) if cfg.id in ids else []
 
     def if_not_in_config_id(ids, values):
-        return list(filter(bool, values or [])) if not cfg.id in ids else []
+        return list(filter(bool, values or [])) if cfg.id not in ids else []
 
     ################################################################################################
     # processes
@@ -151,7 +151,7 @@ def add_config(
                     procs.n.qcd_em_pt120to170,
                     procs.n.qcd_em_pt170to300,
                     procs.n.qcd_em_pt300toinf,
-                    ],
+                ],
             )
             cfg.add_process(
                 name="qcd_mc_e_pythia",
@@ -170,7 +170,7 @@ def add_config(
                     procs.n.qcd_mu_pt600to800,
                     procs.n.qcd_mu_pt800to1000,
                     procs.n.qcd_mu_pt1000toinf,
-                    ],
+                ],
             )
 
     # processes we are interested in
