@@ -152,38 +152,267 @@ def cat_c4tau(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, 
 
 
 @categorizer(uses={"channel_id"})
-def cat_c2ess(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
-    return events, events.channel_id == self.config_inst.channels.n.c2ess.id
+def cat_c2e0or1tau(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    return events, events.channel_id == self.config_inst.channels.n.c2e0or1tau.id
 
 
 @categorizer(uses={"channel_id"})
-def cat_cemuss(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
-    return events, events.channel_id == self.config_inst.channels.n.cemuss.id
+def cat_cemu0or1tau(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    return events, events.channel_id == self.config_inst.channels.n.cemu0or1tau.id
 
 
 @categorizer(uses={"channel_id"})
-def cat_c2muss(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
-    return events, events.channel_id == self.config_inst.channels.n.c2muss.id
+def cat_c2mu0or1tau(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    return events, events.channel_id == self.config_inst.channels.n.c2mu0or1tau.id
 
 
 # 3l/4l inclusive, later split into CR / SR via Z-peak
-@categorizer(uses={"channel_id"})
-def cat_3l0tau(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge", "leptons_os"})
+def cat_3l0tau_SR(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
     catmask = events.channel_id == self.config_inst.channels.n.c3e.id
     catmask = catmask | (events.channel_id == self.config_inst.channels.n.c3mu.id)
     catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2emu.id)
     catmask = catmask | (events.channel_id == self.config_inst.channels.n.ce2mu.id)
-    return events, catmask
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SR = events.tight_sel == 1
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SR & chargeok)
 
 
-@categorizer(uses={"channel_id"})
-def cat_4l(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge", "leptons_os"})
+def cat_3l0tau_SB(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c3e.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c3mu.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2emu.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.ce2mu.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SB = events.tight_sel == 0
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SB & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge", "leptons_os"})
+def cat_4l_SR(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
     catmask = events.channel_id == self.config_inst.channels.n.c4e.id
     catmask = catmask | (events.channel_id == self.config_inst.channels.n.c3emu.id)
     catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2e2mu.id)
     catmask = catmask | (events.channel_id == self.config_inst.channels.n.ce3mu.id)
     catmask = catmask | (events.channel_id == self.config_inst.channels.n.c4mu.id)
-    return events, catmask
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SR = events.tight_sel == 1
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SR & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge", "leptons_os"})
+def cat_4l_SB(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c4e.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c3emu.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2e2mu.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.ce3mu.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c4mu.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SB = events.tight_sel == 0
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SB & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge",
+    "Tau.charge", "leptons_os"})
+def cat_3l1tau_SR(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c3etau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2emutau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.ce2mutau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c3mutau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SR = events.tight_sel == 1
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SR & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge",
+    "Tau.charge", "leptons_os"})
+def cat_3l1tau_SB(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c3etau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2emutau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.ce2mutau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c3mutau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SB = events.tight_sel == 0
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SB & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge",
+    "Tau.charge", "leptons_os"})
+def cat_2l2tau_SR(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c2e2tau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.cemu2tau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2mu2tau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SR = events.tight_sel == 1
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SR & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge",
+    "Tau.charge", "leptons_os"})
+def cat_2l2tau_SB(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c2e2tau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.cemu2tau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2mu2tau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SB = events.tight_sel == 0
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SB & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge",
+    "Tau.charge", "leptons_os"})
+def cat_1l3tau_SR(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.ce3tau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.cmu3tau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SR = events.tight_sel == 1
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SR & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge",
+    "Muon.charge", "Tau.charge", "leptons_os"})
+def cat_1l3tau_SB(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.ce3tau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.cmu3tau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SB = events.tight_sel == 0
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SB & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Tau.charge", "leptons_os"})
+def cat_4tau_SR(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c4tau.id
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SR = events.tight_sel == 1
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SR & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Tau.charge", "leptons_os"})
+def cat_4tau_SB(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c4tau.id
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SB = events.tight_sel == 0
+    chargeok = events.leptons_os == 1
+    return events, (catmask & bveto & SB & chargeok)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge", "leptons_os"})
+def cat_2l0or1tau_SR_SS(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c2e0or1tau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.cemu0or1tau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2mu0or1tau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SR = events.tight_sel == 1
+    SS = events.leptons_os == 0
+    return events, (catmask & bveto & SR & SS)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge", "leptons_os"})
+def cat_2l0or1tau_SR_OS(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c2e0or1tau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.cemu0or1tau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2mu0or1tau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SR = events.tight_sel == 1
+    OS = events.leptons_os == 1
+    return events, (catmask & bveto & SR & OS)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge", "leptons_os"})
+def cat_2l0or1tau_SB_SS(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c2e0or1tau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.cemu0or1tau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2mu0or1tau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SB = events.tight_sel == 0
+    SS = events.leptons_os == 0
+    return events, (catmask & bveto & SB & SS)
+
+
+@categorizer(uses={"channel_id", "Jet.btagPNetB", "tight_sel", "Electron.charge", "Muon.charge", "leptons_os"})
+def cat_2l0or1tau_SB_OS(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    catmask = events.channel_id == self.config_inst.channels.n.c2e0or1tau.id
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.cemu0or1tau.id)
+    catmask = catmask | (events.channel_id == self.config_inst.channels.n.c2mu0or1tau.id)
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    bveto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    SB = events.tight_sel == 0
+    OS = events.leptons_os == 1
+    return events, (catmask & bveto & SB & OS)
 
 
 # bveto
@@ -211,6 +440,16 @@ def cat_bveto_off(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Arr
 @categorizer(uses={"ok_bdt_eormu"})
 def cat_e_or_mu(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
     return events, events.ok_bdt_eormu == 1
+
+
+@categorizer(uses={"ok_bdt_eormu_bveto", "Jet.btagPNetB"})
+def cat_e_or_mu_bveto(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
+    wp_loose = self.config_inst.x.btag_working_points["particleNet"]["loose"]
+    wp_medium = self.config_inst.x.btag_working_points["particleNet"]["medium"]
+    tagged_loose = events.Jet.btagPNetB > wp_loose
+    tagged_medium = events.Jet.btagPNetB > wp_medium
+    veto = (ak.sum(tagged_loose, axis=1) < 2) & (ak.sum(tagged_medium, axis=1) < 1)
+    return events, ((events.ok_bdt_eormu_bveto == 1) & veto)
 
 
 @categorizer(uses={"tight_sel_bdt"})
