@@ -17,7 +17,7 @@ from columnflow.columnar_util import (
 )
 from columnflow.util import maybe_import
 
-from multilepton.util import IF_NANO_V9, IF_NANO_GE_V10
+from multilepton.util import IF_NANO_V9, IF_NANO_GE_V10, IF_NANO_V12, IF_NANO_V14
 from multilepton.config.util import Trigger
 
 np = maybe_import("numpy")
@@ -88,8 +88,10 @@ def update_channel_ids(
     uses={
         "Electron.{pt,eta,phi,dxy,dz}",
         "Electron.{pfRelIso03_all,seediEtaOriX,seediPhiOriY,sip3d,miniPFRelIso_all,sieie}",
-        "Electron.{hoe,eInvMinusPInv,convVeto,lostHits,promptMVA,jetPtRelv2,jetIdx}",
+        "Electron.{hoe,eInvMinusPInv,convVeto,lostHits,jetPtRelv2,jetIdx}",
         "Jet.btagDeepFlavB",
+        IF_NANO_V12("Electron.mvaTTH"),
+        IF_NANO_V14("Electron.promptMVA"),
         IF_NANO_V9("Electron.mvaFall17V2{Iso_WP80,Iso_WP90}"),
         IF_NANO_GE_V10("Electron.{mvaIso_WP80,mvaIso_WP90}"),
     },
@@ -127,6 +129,12 @@ def electron_selection(
         mva_iso_wp80 = events.Electron.mvaFall17V2Iso_WP80
         mva_iso_wp90 = events.Electron.mvaFall17V2Iso_WP90
 
+    if "promptMVA" in events.Electron.fields:
+        # >= nano v14
+        promptMVA = events.Electron.promptMVA
+    else:
+        # nano <v14
+        promptMVA = events.Electron.mvaTTH
     # default electron mask
     tight_mask = None
     control_mask = None
@@ -163,7 +171,7 @@ def electron_selection(
             (events.Electron.convVeto == 1) &
             (events.Electron.lostHits == 0) &
             atleast_medium &
-            (events.Electron.promptMVA > 0.3) &
+            (promptMVA > 0.3) &
             (btag_values < btagcut)
         )
         loose_mask = (
@@ -176,12 +184,12 @@ def electron_selection(
             (events.Electron.lostHits <= 1) &
             atleast_medium
         )
-        idlepmvapassed = (atleast_medium & (events.Electron.promptMVA > 0.3))
-        idlepmvafailed = ((mva_iso_wp90 == 1) & (events.Electron.promptMVA <= 0.3))  # loose doesnt exist anymore :(
-        btaglepmvapassed = ((btag_values < btagcut) & (events.Electron.promptMVA < 0.3))
-        btaglepmvafailed = ((btag_values < btagcut_tight) & (events.Electron.promptMVA > 0.3))
-        jetisolepmvapassed = (events.Electron.promptMVA > 0.3)
-        jetisolepmvafailed = ((events.Electron.promptMVA < 0.3) & (events.Electron.jetPtRelv2 < (1. / 1.7)))
+        idlepmvapassed = (atleast_medium & (promptMVA > 0.3))
+        idlepmvafailed = ((mva_iso_wp90 == 1) & (promptMVA <= 0.3))  # loose doesnt exist anymore :(
+        btaglepmvapassed = ((btag_values < btagcut) & (promptMVA < 0.3))
+        btaglepmvafailed = ((btag_values < btagcut_tight) & (promptMVA > 0.3))
+        jetisolepmvapassed = (promptMVA > 0.3)
+        jetisolepmvafailed = ((promptMVA < 0.3) & (events.Electron.jetPtRelv2 < (1. / 1.7)))
         fakeable_mask = (
             (events.Electron.pt > 10.0) &
             (abs(events.Electron.eta) < 2.5) &
@@ -261,8 +269,10 @@ def electron_trigger_matching(
 @selector(
     uses={
         "Muon.{pt,eta,phi,looseId,mediumId,tightId}",
-        "Muon.{pfRelIso04_all,dxy,dz,sip3d,miniPFRelIso_all,jetPtRelv2,promptMVA,jetIdx}",
+        "Muon.{pfRelIso04_all,dxy,dz,sip3d,miniPFRelIso_all,jetPtRelv2,jetIdx}",
         "Jet.btagDeepFlavB",
+        IF_NANO_V12("Muon.mvaTTH"),
+        IF_NANO_V14("Muon.promptMVA"),
     },
     exposed=False,
 )
@@ -296,6 +306,13 @@ def muon_selection(
         #    min_pt = 23.0 if is_single else 20.0
         # else:
         #    min_pt = 26.0 if is_single else 22.0
+        if "promptMVA" in events.Muon.fields:
+            # >= nano v14
+            promptMVA = events.Muon.promptMVA
+        else:
+            # nano <v14
+            promptMVA = events.Muon.mvaTTH
+
         btagcut = 0.3064  # 22 pre
         btagcut_tight = 0.7217  # 22 pre
         if self.config_inst.campaign.x.year == 2022 and self.config_inst.campaign.has_tag("postEE"):
@@ -323,7 +340,7 @@ def muon_selection(
             (events.Muon.miniPFRelIso_all < 0.4) &
             atleast_medium &
             (btag_values < btagcut) &
-            (events.Muon.promptMVA > 0.5)
+            (promptMVA > 0.5)
         )
         loose_mask = (
             (events.Muon.pt > 5) &
@@ -334,8 +351,8 @@ def muon_selection(
             (events.Muon.miniPFRelIso_all < 0.4) &
             atleast_loose
         )
-        btaglepmvapassed = ((btag_values < btagcut) & (events.Muon.promptMVA < 0.5))
-        btaglepmvafailed = ((btag_values < btagcut_tight) & (events.Muon.promptMVA > 0.5))
+        btaglepmvapassed = ((btag_values < btagcut) & (promptMVA < 0.5))
+        btaglepmvafailed = ((btag_values < btagcut_tight) & (promptMVA > 0.5))
         fakeable_mask = (
             (events.Muon.pt > 10) &
             (abs(events.Muon.eta) < 2.4) &
@@ -345,7 +362,7 @@ def muon_selection(
             (events.Muon.miniPFRelIso_all < 0.4) &
             atleast_loose &
             (btaglepmvapassed | btaglepmvafailed) &
-            ((events.Muon.promptMVA > 0.3) | ((events.Muon.promptMVA <= 0.5) & (events.Muon.jetPtRelv2 < (1. / 1.8))))
+            ((promptMVA > 0.3) | ((promptMVA <= 0.5) & (events.Muon.jetPtRelv2 < (1. / 1.8))))
         )
         # if ch_key == "eormu":
         #    fakeable_mask = loose_mask
