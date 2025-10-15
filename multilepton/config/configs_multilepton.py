@@ -28,7 +28,6 @@ from multilepton.config.styles import stylize_processes
 
 
 logger = law.logger.get_logger(__name__)
-thisdir = os.path.dirname(os.path.abspath(__file__))
 afsbase = "/afs/cern.ch/"
 cvmfsbase = "/cvmfs/"
 if not os.path.isdir(afsbase):
@@ -42,6 +41,48 @@ if not os.path.isdir(afsbase):
         )
 
 
+def pogEraFormat(era):
+    if any( x in era for x in ['2022', '2023']): return era[:4] +'_Summer'+era.replace('20','')
+    else: return era.replace("UL", "") + "_UL"
+
+
+# https://cms-nanoaod-integration.web.cern.ch/commonJSONSFs/
+def localizePOGSF(era, POG, fileName):
+    subdir = pogEraFormat(era)
+    return os.path.join("/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration", "POG", POG, subdir, fileName)
+
+
+#https://btv-wiki.docs.cern.ch/ScaleFactors/Run3Summer22EE/
+def bTagWorkingPoints(era):
+    fileName = localizePOGSF(era, "BTV", "btagging.json.gz")
+    ceval = correctionlib.CorrectionSet.from_file(fileName)
+    cfg.x.btag_working_points = DotDict.wrap({})
+    btagging = defaultdict(dict)
+    if run == 2:
+        taggers = ["deepjet", "deepcsv", "particleNetMD"]
+        eras = ["2016APV", "2016", "2017", "2018"]
+    if run == 3:
+        taggers = ["deepjet", "particleNet", "robustParticleTransformer", "particleNetMD"]
+        eras = ["2022", "2022EE", "2023", "2023BPix"]
+    for tagger in taggers:
+        for wp in  ['L', 'M', 'T', 'XT', 'XXT']:
+            for era in eras:
+                btagging[tagger][wp][era] = ceval[f'{tagger}_wp_values'].evaluate(wp)
+            cfg.x.btag_working_points = DotDict.wrap(btagging[tagger][wp][era][btag_key])
+    return btagging
+
+
+# add triggers
+def add_triggers_for_year(cfg, year):
+    try:
+        module = __import__(f"multilepton.config.triggers", fromlist=[f"add_triggers_{year}"])
+        trigger_func = getattr(module, f"add_triggers_{year}")
+        trigger_func(cfg)
+    except (ImportError, AttributeError):
+        supported_years = [2016, 2017, 2018, 2022, 2023]
+        raise ValueError(f"Unsupported year: {year}. Supported years: {supported_years}")
+
+
 def add_config(
     analysis: od.Analysis,
     campaign: od.Campaign,
@@ -49,14 +90,15 @@ def add_config(
     config_id: int | None = None,
     limit_dataset_files: int | None = None,
     sync_mode: bool = False,
-) -> od.Config:
+    ) -> od.Config:
+    
     # gather campaign data
     run = campaign.x.run
     year = campaign.x.year
     year2 = year % 100
     # some validations
     assert run in {2, 3}
-    assert year in {2016, 2017, 2018, 2022, 2023}
+    assert year in {2016, 2017, 2018, 2022, 2023, 2024, 2025}
     # get all root processes
     procs = get_root_processes_from_campaign(campaign)
     # create a config by passing the campaign, so id and name will be identical
@@ -101,8 +143,11 @@ def add_config(
         return list(filter(bool, values or [])) if cfg.id in ids else []
 
     def if_not_in_config_id(ids, values):
-        return list(filter(bool, values or [])) if cfg.id not in ids else []
+        return list(filter(bool, values or [])) if not cfg.id in ids else []
 
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "analysis.yaml"), "r") as f:
+        data = yaml.load(f, yaml.Loader)
+    
     ################################################################################################
     # processes
     ################################################################################################
@@ -146,7 +191,7 @@ def add_config(
                     procs.n.qcd_em_pt120to170,
                     procs.n.qcd_em_pt170to300,
                     procs.n.qcd_em_pt300toinf,
-                ],
+                    ],
             )
             cfg.add_process(
                 name="qcd_mc_e_pythia",
@@ -165,7 +210,7 @@ def add_config(
                     procs.n.qcd_mu_pt600to800,
                     procs.n.qcd_mu_pt800to1000,
                     procs.n.qcd_mu_pt1000toinf,
-                ],
+                    ],
             )
 
     # processes we are interested in
@@ -1152,6 +1197,7 @@ def add_config(
 
     # b-tag working points
     btag_key = f"{year}{campaign.x.postfix}"
+
     if run == 2:
         # https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL16preVFP?rev=6
         # https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL16postVFP?rev=8
@@ -1271,10 +1317,6 @@ def add_config(
             discriminator="btagPNetB",
         )
 
-    ################################################################################################
-    # dataset / process specific methods
-    ################################################################################################
-
     # top pt reweighting
     # https://twiki.cern.ch/twiki/bin/view/CMS/TopPtReweighting?rev=31
     from columnflow.production.cms.top_pt_weight import TopPtWeightConfig
@@ -1324,21 +1366,15 @@ def add_config(
     ################################################################################################
 
     # load jec sources
-    with open(os.path.join(thisdir, "jec_sources.yaml"), "r") as f:
-        all_jec_sources = yaml.load(f, yaml.Loader)["names"]
-
+    all_jec_sources = data["jec_sources"]
     # register shifts
     cfg.add_shift(name="nominal", id=0)
-
     cfg.add_shift(name="tune_up", id=1, type="shape", tags={"disjoint_from_nominal"})
     cfg.add_shift(name="tune_down", id=2, type="shape", tags={"disjoint_from_nominal"})
-
     cfg.add_shift(name="hdamp_up", id=3, type="shape", tags={"disjoint_from_nominal"})
     cfg.add_shift(name="hdamp_down", id=4, type="shape", tags={"disjoint_from_nominal"})
-
     cfg.add_shift(name="mtop_up", id=5, type="shape", tags={"disjoint_from_nominal"})
     cfg.add_shift(name="mtop_down", id=6, type="shape", tags={"disjoint_from_nominal"})
-
     cfg.add_shift(name="minbias_xs_up", id=7, type="shape")
     cfg.add_shift(name="minbias_xs_down", id=8, type="shape")
     add_shift_aliases(
@@ -1349,7 +1385,6 @@ def add_config(
             "normalized_pu_weight": "normalized_pu_weight_{name}",
         },
     )
-
     cfg.add_shift(name="top_pt_up", id=9, type="shape")
     cfg.add_shift(name="top_pt_down", id=10, type="shape")
     add_shift_aliases(cfg, "top_pt", {"top_pt_weight": "top_pt_weight_{direction}"})
@@ -1449,7 +1484,6 @@ def add_config(
                 "Electron.pt": "Electron.pt_scale_{direction}",
             },
         )
-
         cfg.add_shift(name="eer_up", id=94, type="shape", tags={"eer"})
         cfg.add_shift(name="eer_down", id=95, type="shape", tags={"eer"})
         add_shift_aliases(
@@ -1538,19 +1572,14 @@ def add_config(
     ################################################################################################
 
     cfg.x.external_files = DotDict()
-
+    
     # helper
     def add_external(name, value):
         if isinstance(value, dict):
             value = DotDict.wrap(value)
         cfg.x.external_files[name] = value
     
-    jsonpog_path = "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/"
     if run == 2:
-        json_postfix = ""
-        if year == 2016:
-            json_postfix = f"{'pre' if campaign.has_tag('preVFP') else 'post'}VFP"
-        jsonpog_era = f"{year}{json_postfix}_UL"
         tauPOGJsonFile = "tau.json.gz"
         metPOGJsonFile = "met.json.gz"
     elif run == 3:
@@ -1562,7 +1591,6 @@ def add_config(
             tau_pog_suffix = f"{'pre' if campaign.has_tag('preBPix') else 'post'}BPix"
         tauPOGJsonFile = f"tau_DeepTau2018v2p5_{year}_{tau_pog_suffix}.json.gz"
         metPOGJsonFile = f"met_xyCorrections_{met_pog_suffix}.json.gz"
-        jsonpog_era = f"{year}_Summer{year2}{campaign.x.postfix}"
         trigger_json_mirror = "https://gitlab.cern.ch/cclubbtautau/AnalysisCore/-/archive/59ae66c4a39d3e54afad5733895c33b1fb511c47/AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47.tar.gz"  # noqa: E501
         campaign_tag = ""
         for tag in ("preEE", "postEE", "preBPix", "postBPix"):
@@ -1570,7 +1598,6 @@ def add_config(
                 if campaign_tag:
                     raise ValueError(f"Multiple campaign tags found: {cfg.x.campaign_tag} and {tag}")
                 campaign_tag = tag
-        cclub_eras = f"{year}{campaign_tag}"
     else:
         assert False
 
@@ -1597,39 +1624,29 @@ def add_config(
         }[year],
     })
     
-    # pileup weight corrections
-    add_external("pu_sf", (f"{jsonpog_path}/POG/LUM/{jsonpog_era}/puWeights.json.gz", "v1"))
-    # jet energy correction
-    add_external("jet_jerc", (f"{jsonpog_path}/POG/JME/{jsonpog_era}/jet_jerc.json.gz", "v1"))
-    # jet veto map
-    add_external("jet_veto_map", (f"{jsonpog_path}/POG/JME/{jsonpog_era}/jetvetomaps.json.gz", "v1"))
-    # btag scale factor
-    add_external("btag_sf_corr", (f"{jsonpog_path}/POG/BTV/{jsonpog_era}/btagging.json.gz", "v1"))
-    # muon scale factors
-    add_external("muon_sf", (f"{jsonpog_path}/POG/MUO/{jsonpog_era}/muon_Z.json.gz", "v1"))
-    # electron scale factors
-    add_external("electron_sf", (f"{jsonpog_path}/POG/EGM/{jsonpog_era}/electron.json.gz", "v1"))
-    # met phi correction
-    add_external("met_phi_corr", (f"{jsonpog_path}/POG/JME/{jsonpog_era}/{metPOGJsonFile}", "v1"))
-    # tau energy correction and scale factors
-    add_external("tau_sf", (f"{jsonpog_path}/POG/TAU/{jsonpog_era}/{tauPOGJsonFile}", "v1"))
-
+    add_external("pu_sf", (localizePOGSF(year, "LUM", "puWeights.json.gz"), "v1")
+    add_external("jet_jerc", (localizePOGSF(year, "JME", "jet_jerc.json.gz"), "v1")
+    add_external("jet_veto_map", (localizePOGSF(year, "JME", "jetvetomaps.json.gz"), "v1")
+    add_external("met_phi_corr", (localizePOGSF(year, "JME", f"{metPOGJsonFile}"), "v1")
+    add_external("btag_sf_corr", (localizePOGSF(year, "BTV", "btagging.json.gz"), "v1")
+    add_external("muon_sf", (localizePOGSF(year, "MUO", "muon_Z.json.gz"), "v1")
+    add_external("electron_sf", (localizePOGSF(year, "EGM", "electron.json.gz"), "v1")
+    add_external("tau_sf", (localizePOGSF(year, "TAU", f"{tauPOGJsonFile}"), "v1")
+    
     # run specific files
     if run == 2:
-        # tau trigger scale factors
-        add_external("tau_trigger_sf", (f"{jsonpog_path}/POG/TAU/{jsonpog_era}/tau.json.gz", "v1"))
+        add_external("tau_trigger_sf", (localizePOGSF(year, "TAU", "tau.json.gz"), "v1")
         # hh-btag repository with TF saved model directories trained on Run2 UL samples
         add_external("hh_btag_repo", Ext(
             afsbase + "/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
             subpaths=DotDict(even="hh-btag-master/models/HHbtag_v2_par_0", odd="hh-btag-master/models/HHbtag_v2_par_1"),  # noqa: E501
             version="v2",
         ))
-
     elif run == 3:
         # electron energy correction and smearing
-        add_external("electron_ss", (f"{jsonpog_path}/POG/EGM/{jsonpog_era}/electronSS_EtDependent.json.gz", "v1"))
+        add_external("electron_ss", (localizePOGSF(year, "EGM", "electronSS_EtDependent.json.gz"), "v1")
         # updated jet id
-        add_external("jet_id", (f"{jsonpog_path}/POG/JME/{jsonpog_era}/jetid.json.gz", "v1"))
+        add_external("jet_id", (localizePOGSF(year, "JME", "jetid.json.gz"), "v1") 
         # hh-btag repository with TF saved model directories trained on 22+23 samples using pnet
         add_external("hh_btag_repo", Ext(
             afsbase + "/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
@@ -1646,16 +1663,15 @@ def add_config(
         add_external("trigger_sf", Ext(
             f"{trigger_json_mirror}",
             subpaths=DotDict(
-                muon=f"{trigger_sf_internal_subpath}/{cclub_eras}/temporary_MuHlt_abseta_pt.json",
-                cross_muon=f"{trigger_sf_internal_subpath}/{cclub_eras}/CrossMuTauHlt.json",
-                electron=f"{trigger_sf_internal_subpath}/{cclub_eras}/electronHlt.json",
-                cross_electron=f"{trigger_sf_internal_subpath}/{cclub_eras}/CrossEleTauHlt.json",
-                tau=f"{trigger_sf_internal_subpath}/{cclub_eras}/tau_trigger_DeepTau2018v2p5_{year}{tau_pog_suffix}.json",
-                jet=f"{trigger_sf_internal_subpath}/{cclub_eras}/ditaujet_jetleg_SFs_{campaign_tag}.json",
+                muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/temporary_MuHlt_abseta_pt.json",
+                cross_muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossMuTauHlt.json",
+                electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/electronHlt.json",
+                cross_electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossEleTauHlt.json",
+                tau=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/tau_trigger_DeepTau2018v2p5_{year}{tau_pog_suffix}.json",
+                jet=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/ditaujet_jetleg_SFs_{campaign_tag}.json",
             ),
             version="v1",
         ))
-
     else:
         assert False
 
@@ -1706,21 +1722,21 @@ def add_config(
     })
 
     ################################################################################################
-    # weights
+    # add weights
     ################################################################################################
-
     # configurations for all possible event weight columns as keys in an OrderedDict,
     # mapped to shift instances they depend on
     # (this info is used by weight producers)
+    
     get_shifts = functools.partial(get_shifts_from_sources, cfg)
     cfg.x.event_weights = DotDict({
-        "normalization_weight": [],
-        "normalization_weight_inclusive": [],
         "pdf_weight": get_shifts("pdf"),
         "murmuf_weight": get_shifts("murmuf"),
-        # "normalized_pu_weight": get_shifts("minbias_xs"),
+        "normalization_weight": [],
+        "normalization_weight_inclusive": [],
         "normalized_isr_weight": get_shifts("isr"),
         "normalized_fsr_weight": get_shifts("fsr"),
+        # "normalized_pu_weight": get_shifts("minbias_xs"),
         # TODO: enable again once we have btag cuts
         # "normalized_njet_btag_deepjet_weight": get_shifts(*(f"btag_{unc}" for unc in cfg.x.btag_unc_names)),
         # "electron_weight": get_shifts("e"),
@@ -1769,7 +1785,7 @@ def add_config(
     }
 
     ################################################################################################
-    # external configs: channels, categories, met filters, triggers, variables
+    # add external configs: channels, categories, met filters, triggers, variables
     ################################################################################################
 
     # channels
@@ -1805,34 +1821,13 @@ def add_config(
 
     # add categories
     from multilepton.config.categories import add_categories
-    add_categories(cfg)
-
-    # add variables
     from multilepton.config.variables import add_variables
-    add_variables(cfg)
-
-    # add met filters
     from multilepton.config.met_filters import add_met_filters
+    
+    add_categories(cfg)
+    add_variables(cfg)
     add_met_filters(cfg)
-
-    # add triggers
-    if year == 2016:
-        from multilepton.config.triggers import add_triggers_2016
-        add_triggers_2016(cfg)
-    elif year == 2017:
-        from multilepton.config.triggers import add_triggers_2017
-        add_triggers_2017(cfg)
-    elif year == 2018:
-        from multilepton.config.triggers import add_triggers_2018
-        add_triggers_2018(cfg)
-    elif year == 2022:
-        from multilepton.config.triggers import add_triggers_2022
-        add_triggers_2022(cfg)
-    elif year == 2023:
-        from multilepton.config.triggers import add_triggers_2023
-        add_triggers_2023(cfg)
-    else:
-        raise False
+    add_triggers_for_year(cfg, year)
 
     ################################################################################################
     # LFN settings
@@ -1841,7 +1836,6 @@ def add_config(
     # custom method and sandbox for determining dataset lfns
     cfg.x.get_dataset_lfns = None
     cfg.x.get_dataset_lfns_sandbox = None
-
     # whether to validate the number of obtained LFNs in GetDatasetLFNs
     cfg.x.validate_dataset_lfns = limit_dataset_files is None and not sync_mode
 
