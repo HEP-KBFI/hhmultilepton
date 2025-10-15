@@ -16,6 +16,48 @@ def add_categories(config: od.Config) -> None:
     """
     Adds all categories to a *config*.
     """
+    
+    def name_fn(categories: dict[str, od.Category]) -> str:
+        return "__".join(cat.name for cat in categories.values() if cat)
+
+    def kwargs_fn(categories: dict[str, od.Category], add_qcd_group: bool = True) -> dict[str, Any]:
+        # build auxiliary information
+        aux = {}
+        if add_qcd_group:
+            aux["qcd_group"] = name_fn({
+                name: cat for name, cat in categories.items()
+                if name not in {"sign", "tau2"}
+            })
+        # return the desired kwargs
+        return {
+            # just increment the category id
+            # NOTE: for this to be deterministic, the order of the categories must no change!
+            "id": "+",
+            # join all tags
+            "tags": set.union(*[cat.tags for cat in categories.values() if cat]),
+            # auxiliary information
+            "aux": aux,
+            # label
+            "label": ", ".join([
+                cat.label or cat.name
+                for cat in categories.values()
+                # if cat.name != "os"  # os is the default
+            ]) or None,
+        }
+
+    def skip_fn_ctrl(categories: dict[str, od.Category]) -> bool:
+        if "channel" not in categories or "kin" not in categories:
+            return False
+        ch_cat = categories["channel"]
+        kin_cat = categories["kin"]
+        # skip dy in emu
+        if kin_cat.name == "dy" and ch_cat.name == "emu":
+            return True
+        # skip tt in ee/mumu
+        if kin_cat.name == "tt" and ch_cat.name in ("ee", "mumu"):
+            return True
+        return False
+ 
     # root category (-1 has special meaning in cutflow)
     root_cat = add_category(config, name="all", id=-1, selection="cat_all", label="")
     _add_category = functools.partial(add_category, parent=root_cat)
@@ -60,6 +102,19 @@ def add_categories(config: od.Config) -> None:
     # bveto
     _add_category(config, name="bveto_on", id=30001, selection="cat_bveto_on", label="bveto on")
     _add_category(config, name="bveto_off", id=30002, selection="cat_bveto_off", label="bveto off")
+    # qcd regions
+    _add_category(config, name="os", id=10, selection="cat_os", label="OS", tags={"os"})
+    _add_category(config, name="ss", id=11, selection="cat_ss", label="SS", tags={"ss"})
+    _add_category(config, name="iso", id=12, selection="cat_iso", label=r"iso", tags={"iso"})
+    _add_category(config, name="noniso", id=13, selection="cat_noniso", label=r"non-iso", tags={"noniso"})  # noqa: E501
+    # kinematic categories
+    _add_category(config, name="incl", id=100, selection="cat_incl", label="inclusive")
+    _add_category(config, name="2j", id=110, selection="cat_2j", label="2 jets")
+    _add_category(config, name="dy", id=210, selection="cat_dy", label="DY enriched")
+    _add_category(config, name="tt", id=220, selection="cat_tt", label=r"$t\bar{t}$ enriched")
+    _add_category(config, name="res1b", id=300, selection="cat_res1b", label="res1b")
+    _add_category(config, name="res2b", id=301, selection="cat_res2b", label="res2b")
+    _add_category(config, name="boosted", id=310, selection="cat_boosted", label="boosted")
 
     # Loose category for BDT trainning + tight + trigmatch
     _add_category(config, name="ceormu", id=10000, selection="cat_e_or_mu", label=r"e or $\mu$", tags={"ceormu"})
@@ -170,35 +225,6 @@ def add_categories(config: od.Config) -> None:
     #
     # build groups
     #
-
-    def name_fn(categories: dict[str, od.Category]) -> str:
-        return "__".join(cat.name for cat in categories.values() if cat)
-
-    def kwargs_fn(categories: dict[str, od.Category], add_qcd_group: bool = True) -> dict[str, Any]:
-        # build auxiliary information
-        aux = {}
-        if add_qcd_group:
-            aux["qcd_group"] = name_fn({
-                name: cat for name, cat in categories.items()
-                if name not in {"sign", "tau2"}
-            })
-        # return the desired kwargs
-        return {
-            # just increment the category id
-            # NOTE: for this to be deterministic, the order of the categories must no change!
-            "id": "+",
-            # join all tags
-            "tags": set.union(*[cat.tags for cat in categories.values() if cat]),
-            # auxiliary information
-            "aux": aux,
-            # label
-            "label": ", ".join([
-                cat.label or cat.name
-                for cat in categories.values()
-                # if cat.name != "os"  # os is the default
-            ]) or None,
-        }
-
     # main analysis categories
     # main_categories = {
         # channels first

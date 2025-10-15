@@ -39,9 +39,7 @@ setup_multilepton() {
     #
     #forcing this 
     if [ $# -lt 1 ]; then
-        echo "require exactly one argument"
-        echo "usage : source setup.sh <setup_name>"
-        echo "Example: source setup.sh dev"
+        echo "Require exactly one argument! usage : source setup.sh <setup_name>"
         return 1
     fi
 
@@ -81,7 +79,7 @@ setup_multilepton() {
     export CF_SCHEDULER_HOST="${CF_SCHEDULER_HOST:-naf-cms14.desy.de}"
     export CF_SCHEDULER_PORT="${CF_SCHEDULER_PORT:-8088}"
 
-        # default job flavor settings (starting with naf / maxwell cluster defaults)
+    # default job flavor settings (starting with naf / maxwell cluster defaults)
     # used by law.cfg and, in turn, tasks/framework/remote.py
     local cf_htcondor_flavor_default="cern_el9"
     local cf_slurm_flavor_default="manivald"

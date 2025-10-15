@@ -12,8 +12,8 @@ import order as od
 
 from columnflow.util import DotDict
 
+from multilepton.tasks.base import MultileptonTask
 from multilepton.config.configs_multilepton import add_config
-
 
 #
 # the main analysis object
@@ -93,7 +93,12 @@ def add_lazy_config(
             # import the campaign
             mod = importlib.import_module(campaign_module)
             campaign = getattr(mod, campaign_attr)
-
+            
+            # use the task parameter if available
+            #current_task = MultileptonTask.get_current_task()
+            #if current_task and current_task.limit_dataset_files != -1:
+            #    limit_dataset_files = current_task.limit_dataset_files
+            print( 'helooooooo', limit_dataset_files , add_limited)
             return add_config(
                 analysis_multilepton,
                 campaign.copy(),
@@ -106,7 +111,7 @@ def add_lazy_config(
 
     analysis_multilepton.configs.add_lazy_factory(config_name, create_factory(config_id))
     if add_limited:
-        analysis_multilepton.configs.add_lazy_factory(f"{config_name}_limited", create_factory(config_id + 200, "_limited", 2))  # noqa: 501
+        analysis_multilepton.configs.add_lazy_factory(f"{config_name}_limited", create_factory(config_id + 200, "_limited", 1))  # noqa: 501
 
 
 # 2022, preEE
@@ -123,6 +128,7 @@ add_lazy_config(
     campaign_attr="campaign_run3_2022_postEE_nano_uhh_v14",
     config_name="22post_v14",
     config_id=6014,
+    add_limited=True,
 )
 
 # 2022, preEE, v14
@@ -180,7 +186,7 @@ add_lazy_config(
     campaign_attr="campaign_run3_2022_postEE_nano_v12",
     config_name="22post_v12_sync",
     config_id=6112,
-    add_limited=False,
+    add_limited=True,
     sync_mode=True,
 )
 
@@ -200,7 +206,7 @@ add_lazy_config(
     campaign_attr="campaign_run3_2023_postBPix_nano_v13",
     config_name="23post_v13_sync",
     config_id=8113,
-    add_limited=False,
+    add_limited=True,
     sync_mode=True,
 )
 
@@ -239,4 +245,5 @@ add_lazy_config(
     campaign_attr="campaign_run3_2023_postBPix_nano_v12",
     config_name="23post_v12",
     config_id=8012,
+    add_limited=True
 )

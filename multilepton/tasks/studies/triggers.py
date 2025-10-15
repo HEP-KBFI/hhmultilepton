@@ -14,14 +14,14 @@ from columnflow.tasks.framework.mixins import DatasetsProcessesMixin
 from columnflow.tasks.external import GetDatasetLFNs
 from columnflow.util import ensure_proxy, dev_sandbox
 
-from multilepton.tasks.base import MULTILEPTONTask
+from multilepton.tasks.base import MultileptonTask
 from multilepton.tasks.parameters import table_format_param, escape_markdown_param
 
 
 logger = law.logger.get_logger(__name__)
 
 
-class MULTILEPTONTriggerTask(MULTILEPTONTask):
+class MultileptonTriggerTask(MultileptonTask):
     """
     Base task for trigger related studies.
     """
@@ -39,7 +39,7 @@ class MULTILEPTONTriggerTask(MULTILEPTONTask):
     )
 
 
-class PrintTriggersInFile(MULTILEPTONTriggerTask, DatasetTask, law.tasks.RunOnceTask):
+class PrintTriggersInFile(MultileptonTriggerTask, DatasetTask, law.tasks.RunOnceTask):
     """
     Prints a list of all HLT paths contained in the first file of a dataset.
 
@@ -85,7 +85,7 @@ class PrintTriggersInFile(MULTILEPTONTriggerTask, DatasetTask, law.tasks.RunOnce
         print("")
 
 
-class PrintExistingConfigTriggers(MULTILEPTONTriggerTask, DatasetsProcessesMixin, law.tasks.RunOnceTask):
+class PrintExistingConfigTriggers(MultileptonTriggerTask, DatasetsProcessesMixin, law.tasks.RunOnceTask):
     """
     Prints a table showing datasets (one per column) and contained HLT paths (one per row).
 

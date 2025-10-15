@@ -21,12 +21,12 @@ from columnflow.tasks.production import ProduceColumns
 from columnflow.tasks.ml import MLEvaluation
 from columnflow.util import dev_sandbox
 
-from multilepton.tasks.base import MULTILEPTONTask
+from multilepton.tasks.base import MultileptonTask
 from multilepton.util import hash_events
 
 
 class CheckExternalLFNOverlap(
-    MULTILEPTONTask,
+    MultileptonTask,
     DatasetTask,
 ):
 
@@ -118,7 +118,7 @@ class CheckExternalLFNOverlap(
 
 
 class CreateSyncFiles(
-    MULTILEPTONTask,
+    MultileptonTask,
     ReducedEventsUser,
     ChunkedIOMixin,
     ProducersMixin,

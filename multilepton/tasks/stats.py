@@ -10,11 +10,11 @@ import law
 
 from columnflow.tasks.framework.base import ConfigTask
 
-from multilepton.tasks.base import MULTILEPTONTask
+from multilepton.tasks.base import MultileptonTask
 from multilepton.tasks.parameters import table_format_param
 
 
-class ListDatasetStats(MULTILEPTONTask, ConfigTask, law.tasks.RunOnceTask):
+class ListDatasetStats(MultileptonTask, ConfigTask, law.tasks.RunOnceTask):
 
     single_config = True
 
