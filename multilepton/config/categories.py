@@ -16,7 +16,82 @@ def add_categories(config: od.Config) -> None:
     """
     Adds all categories to a *config*.
     """
+    # root category (-1 has special meaning in cutflow)
+    root_cat = add_category(config, name="all", id=-1, selection="cat_all", label="")
+    _add_category = functools.partial(add_category, parent=root_cat)
     
+    # lepton channels
+    _add_category(config, name="cetau", id=1, selection="cat_etau", label=config.channels.n.cetau.label)
+    _add_category(config, name="cmutau", id=2, selection="cat_mutau", label=config.channels.n.cmutau.label)
+    _add_category(config, name="ctautau", id=3, selection="cat_tautau", label=config.channels.n.ctautau.label)
+    _add_category(config, name="cee", id=4, selection="cat_ee", label=config.channels.n.cee.label)
+    _add_category(config, name="cmumu", id=5, selection="cat_mumu", label=config.channels.n.cmumu.label)
+    _add_category(config, name="cemu", id=6, selection="cat_emu", label=config.channels.n.cemu.label)
+    # 3l/4l inclusive channels
+    _add_category(config, name="c3l0tau", id=1001, selection="cat_3l0tau", label="$3\ell 0\tau_h$")  # noqa: W605
+    _add_category(config, name="c4l", id=1002, selection="cat_4l", label="$4\ell$")  # noqa: W605
+    # 3l/4l non inclusive channels ( no taus)
+    _add_category(config, name="c3e", id=14, selection="cat_3e", label=config.channels.n.c3e.label)
+    _add_category(config, name="c2emu", id=15, selection="cat_2emu", label=config.channels.n.c2emu.label)
+    _add_category(config, name="ce2mu", id=16, selection="cat_e2mu", label=config.channels.n.ce2mu.label)
+    _add_category(config, name="c3mu", id=17, selection="cat_3mu", label=config.channels.n.c3mu.label)
+    _add_category(config, name="c4e", id=18, selection="cat_4e", label=config.channels.n.c4e.label)
+    _add_category(config, name="c3emu", id=19, selection="cat_3emu", label=config.channels.n.c3emu.label)
+    _add_category(config, name="c2e2mu", id=20, selection="cat_2e2mu", label=config.channels.n.c2e2mu.label)
+    _add_category(config, name="ce3mu", id=21, selection="cat_e3mu", label=config.channels.n.ce3mu.label)
+    _add_category(config, name="c4mu", id=22, selection="cat_4mu", label=config.channels.n.c4mu.label)
+    # 3l/4l non inclusive channels ( with taus)
+    _add_category(config, name="c3etau", id=23, selection="cat_3etau", label=config.channels.n.c3etau.label)
+    _add_category(config, name="c2emutau", id=24, selection="cat_2emutau", label=config.channels.n.c2emutau.label)
+    _add_category(config, name="ce2mutau", id=25, selection="cat_e2mutau", label=config.channels.n.ce2mutau.label)
+    _add_category(config, name="c3mutau", id=26, selection="cat_3mutau", label=config.channels.n.c3mutau.label)
+    _add_category(config, name="c2e2tau", id=27, selection="cat_2e2tau", label=config.channels.n.c2e2tau.label)
+    _add_category(config, name="cemu2tau", id=28, selection="cat_emu2tau", label=config.channels.n.cemu2tau.label)
+    _add_category(config, name="c2mu2tau", id=29, selection="cat_2mu2tau", label=config.channels.n.c2mu2tau.label)
+    _add_category(config, name="ce3tau", id=30, selection="cat_e3tau", label=config.channels.n.ce3tau.label)
+    _add_category(config, name="cmu3tau", id=31, selection="cat_mu3tau", label=config.channels.n.cmu3tau.label)
+    _add_category(config, name="c4tau", id=32, selection="cat_4tau", label=config.channels.n.c4tau.label)
+    # di-lepton channles
+    _add_category(config, name="c2ess", id=33, selection="cat_2ess", label=config.channels.n.c2ess.label)
+    _add_category(config, name="cemuss", id=34, selection="cat_emuss", label=config.channels.n.cemuss.label)
+    _add_category(config, name="c2muss", id=35, selection="cat_2muss", label=config.channels.n.c2muss.label)
+    # Loose category for BDT trainning + tight + trigmatch
+    _add_category(config, name="ceormu", id=10000, selection="cat_e_or_mu", label=r"e or $\mu$", tags={"ceormu"})
+    # bveto
+    _add_category(config, name="bveto_on", id=30001, selection="cat_bveto_on", label="bveto on")
+    _add_category(config, name="bveto_off", id=30002, selection="cat_bveto_off", label="bveto off")
+    # tight/nontight
+    _add_category(config, name="tight_bdt", id=11000, selection="cat_tight_bdt", label="tight", tags={"tight_bdt"})
+    _add_category(config, name="nontight_bdt", id=12000,
+        selection="cat_nontight_bdt", label="fakeable", tags={"nontight_bdt"})
+    # trigmatch
+    _add_category(config, name="trigmatch_bdt", id=13000,
+        selection="cat_trigmatch_bdt", label="trigger matched", tags={"trigmatch_bdt"})
+    _add_category(config, name="nontrigmatch_bdt", id=14000,
+        selection="cat_nontrigmatch_bdt", label="trigger unmatched", tags={"nontrigmatch_bdt"})
+    # tight/nontight
+    _add_category(config, name="tight", id=10001, selection="cat_tight", label="tight", tags={"tight"})
+    _add_category(config, name="nontight", id=10002, selection="cat_nontight", label="fakeable", tags={"nontight"})
+    # trigmatch
+    _add_category(config, name="trigmatch", id=10003, 
+        selection="cat_trigmatch", label="trigger matched", tags={"trigmatch"})
+    _add_category(config, name="nontrigmatch", id=10004, 
+        selection="cat_nontrigmatch", label="trigger unmatched", tags={"nontrigmatch"})
+    # qcd regions
+    _add_category(config, name="os", id=10, selection="cat_os", label="OS", tags={"os"})
+    _add_category(config, name="ss", id=11, selection="cat_ss", label="SS", tags={"ss"})
+    _add_category(config, name="iso", id=12, selection="cat_iso", label=r"iso", tags={"iso"})
+    _add_category(config, name="noniso", id=13, selection="cat_noniso", label=r"non-iso", tags={"noniso"})  # noqa: E501
+    # kinematic categories
+    _add_category(config, name="incl", id=100, selection="cat_incl", label="inclusive")
+    _add_category(config, name="2j", id=110, selection="cat_2j", label="2 jets")
+    _add_category(config, name="dy", id=210, selection="cat_dy", label="DY enriched")
+    _add_category(config, name="tt", id=220, selection="cat_tt", label=r"$t\bar{t}$ enriched")
+    _add_category(config, name="res1b", id=300, selection="cat_res1b", label="res1b")
+    _add_category(config, name="res2b", id=301, selection="cat_res2b", label="res2b")
+    _add_category(config, name="boosted", id=310, selection="cat_boosted", label="boosted")
+
+
     def name_fn(categories: dict[str, od.Category]) -> str:
         return "__".join(cat.name for cat in categories.values() if cat)
 
@@ -28,23 +103,18 @@ def add_categories(config: od.Config) -> None:
                 name: cat for name, cat in categories.items()
                 if name not in {"sign", "tau2"}
             })
-        # return the desired kwargs
         return {
-            # just increment the category id
             # NOTE: for this to be deterministic, the order of the categories must no change!
-            "id": "+",
-            # join all tags
+            "id": "+", # just increment the category id
             "tags": set.union(*[cat.tags for cat in categories.values() if cat]),
-            # auxiliary information
             "aux": aux,
-            # label
             "label": ", ".join([
                 cat.label or cat.name
                 for cat in categories.values()
                 # if cat.name != "os"  # os is the default
             ]) or None,
         }
-
+    
     def skip_fn_ctrl(categories: dict[str, od.Category]) -> bool:
         if "channel" not in categories or "kin" not in categories:
             return False
@@ -57,10 +127,6 @@ def add_categories(config: od.Config) -> None:
         if kin_cat.name == "tt" and ch_cat.name in ("ee", "mumu"):
             return True
         return False
- 
-    # root category (-1 has special meaning in cutflow)
-    root_cat = add_category(config, name="all", id=-1, selection="cat_all", label="")
-    _add_category = functools.partial(add_category, parent=root_cat)
     
     # lepton channels
     _add_category(config, name="etau", id=1, selection="cat_etau", label=config.channels.n.etau.label)

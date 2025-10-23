@@ -11,12 +11,12 @@ from functools import reduce
 
 import law
 
+from columnflow.util import maybe_import
 from columnflow.selection import Selector, SelectionResult, selector
 from columnflow.production.cms.jet import jet_id, fatjet_id
 from columnflow.columnar_util import (
     EMPTY_FLOAT, set_ak_column, sorted_indices_from_mask, mask_from_indices, flat_np_view, full_like,
 )
-from columnflow.util import maybe_import
 
 # from multilepton.production.hhbtag import hhbtag
 from multilepton.selection.lepton import trigger_object_matching
@@ -39,6 +39,8 @@ ak = maybe_import("awkward")
         "Jet.hhbtag", "matched_trigger_ids",
     },
 )
+
+
 def jet_selection(
     self: Selector,
     events: ak.Array,
@@ -48,7 +50,6 @@ def jet_selection(
 ) -> tuple[ak.Array, SelectionResult]:
     """
     Jet selection based on ultra-legacy recommendations.
-
     Resources:
     https://twiki.cern.ch/twiki/bin/view/CMS/JetID?rev=107#nanoAOD_Flags
     https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL?rev=15#Recommendations_for_the_13_T_AN1
@@ -68,7 +69,6 @@ def jet_selection(
     #
     # default jet selection
     #
-
     # ak.all(events.Jet.metric_table(lepton_results.x.leading_taus) > 0.5, axis=2)
     # common ak4 jet mask for normal and vbf jets
     ak4_mask = (
@@ -95,7 +95,6 @@ def jet_selection(
     #
     # hhb-jet identification
     #
-
     # events = self[hhbtag](events, default_mask, lepton_results.x.lepton_pair, **kwargs)
     # hhbtag_scores = events.hhbtag_score
     # just set hhbtag to zero for now, later remove
@@ -133,6 +132,7 @@ def jet_selection(
             false_mask,
         ), axis=1)
     )
+    
     # create mask for tautau events that matched taus in vbf trigger
     ttv_mask = (
         (events.channel_id == ch_tautau.id) &
@@ -175,7 +175,7 @@ def jet_selection(
                     matching_mask |
                     trigger_matching_mask
                 )
-
+                
                 # update trigger matching mask with constraints on the jets
                 trigger_matching_mask = (
                     trigger_matching_mask &
@@ -266,7 +266,6 @@ def jet_selection(
     #
     # fat jets
     #
-
     fatjet_mask = (
         (events.FatJet.jetId == 6) &  # tight plus lepton veto
         (events.FatJet.msoftdrop > 30.0) &
@@ -278,6 +277,7 @@ def jet_selection(
         (events.FatJet.subJetIdx1 >= 0) &
         (events.FatJet.subJetIdx2 >= 0)
     )
+    
     # ak.all(events.FatJet.metric_table(lepton_results.x.leading_taus) > 0.8, axis=2) &
     # store fatjet and subjet indices
     fatjet_indices = ak.local_index(events.FatJet.pt)[fatjet_mask]
@@ -297,7 +297,6 @@ def jet_selection(
     #
     # vbf jets
     #
-
     vbf_mask = (
         ak4_mask &
         (events.Jet.pt > 20.0) &
@@ -344,6 +343,7 @@ def jet_selection(
         # update the "ttv only" mask
         cross_vbf_masks = [events.matched_trigger_ids == tid for tid in self.trigger_ids_ttv]
         cross_vbf_mask = ak.all(reduce(or_, cross_vbf_masks), axis=1)
+        
         # remove all events that fired only vbf trigger but were not matched or
         # that fired vbf and tautaujet triggers and matched the taus but not the jets
         ttv_fired_v_not_matched = (
@@ -403,7 +403,6 @@ def jet_selection(
     #
     # final selection and object construction
     #
-
     # pt sorted indices to convert mask
     jet_indices = sorted_indices_from_mask(default_mask, events.Jet.pt, ascending=False)
 
@@ -470,7 +469,6 @@ def jet_selection(
             "n_central_jets": ak.num(jet_indices, axis=1),
         },
     )
-
     return events, result
 
 

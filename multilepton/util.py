@@ -125,29 +125,25 @@ def RAW_MET_COLUMN(self: ArrayFunction.DeferredColumn, func: ArrayFunction) -> A
 
 
 def hash_events(arr: np.ndarray) -> np.ndarray:
+    import awkward as ak
     """
     Helper function to create a hash value from the event, run and luminosityBlock columns.
     The values are padded to specific lengths and concatenated to a single integer.
     """
-    import awkward as ak
-
     def assert_value(arr: np.ndarray, field: str, max_value: int) -> None:
         """
         Helper function to check if a column does not exceed a maximum value.
         """
         digits = len(str(arr[field].to_numpy().max()))
         assert digits <= max_value, f"{field} digit count is {digits} and exceed max value {max_value}"
-
     max_digits_run = 6
     max_digits_luminosityBlock = 6
     max_digits_event = 8
     assert_value(arr, "run", max_digits_run)
     assert_value(arr, "luminosityBlock", max_digits_luminosityBlock)
     assert_value(arr, "event", max_digits_event)
-
     max_digits_hash = max_digits_event + max_digits_luminosityBlock + max_digits_run
     assert max_digits_hash <= 20, "sum of digits exceeds uint64"
-
     # upcast to uint64 to avoid overflow
     return (
         ak.values_astype(arr.run, np.uint64) * 10**(max_digits_luminosityBlock + max_digits_event) +

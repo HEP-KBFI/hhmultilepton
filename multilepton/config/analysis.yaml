@@ -1,0 +1,429 @@
+Analysis:
+  name: "multilepton"
+label: "HH → multi-leptons"
+
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmVRun3Analysis?rev=161
+years:
+  2016: 
+    run: 2
+    campaigns: ["APV", ""]
+    luminosity:  
+      - 2016preVFP: 19667.812849099  # pb
+      - 2016postVFP: 16977.701784453 # pb 
+    luminosity-error: 0.01
+    luminosity-uncertainties:
+      - lumi_13TeV_2016: 0.01j
+      - lumi_13TeV_correlated: 0.006j
+    certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions16/13TeV/Legacy_2016/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt
+    normtag: /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json
+  2017:
+    run: 2
+    campaigns: [""]
+    luminosity: 41529.152060112 # pb
+    luminosity-error: 0.02
+    luminosity-uncertainties:
+      - lumi_13TeV_2017: 0.02j
+      - lumi_13TeV_1718: 0.006j
+      - lumi_13TeV_correlated: 0.009j
+    certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions17/13TeV/Legacy_2017/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt
+    normtag: /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json
+  2018:
+    run: 2
+    campaigns: [""]
+    luminosity: 59740.565201546 # pb
+    luminosity-error: 0.015
+    luminosity-uncertainties:
+      - lumi_13TeV_2018: 0.015j
+      - lumi_13TeV_1718: 0.002j
+      - lumi_13TeV_correlated: 0.02j
+    certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions18/13TeV/Legacy_2018/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt
+    normtag: /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json
+  2022: 
+    run: 3
+    campaigns: ["", "EE"]
+    luminosity: 
+      - 2022preEE: 7980.4    # pb
+      - 2022postEE: 26671.7  # pb
+    luminosity-error: 0.014
+    luminosity-uncertainties:
+      - lumi_13p6TeV_correlated: 0.014j
+    certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions22/Cert_Collisions2022_355100_362760_Golden.json
+    normtag: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Run3/normtag_BRIL.json
+  2023: 
+    run: 3
+    campaigns: ["", "BPix"]
+    luminosity: 
+      - 2023preBPix: 17794.0  # pb
+      - 2023postBPix: 9451.0  # pb
+    luminosity-error: 0.013
+    luminosity-uncertainties:
+      - lumi_13p6TeV_correlated: 0.013j
+    certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions23/Cert_Collisions2023_366442_370790_Golden.json
+    normtag: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Run3/normtag_BRIL.json
+  2024:
+    run: 3
+    campaigns: [""]
+    luminosity: 1090.08  # pb
+    luminosity-error: 0.013
+    luminosity-uncertainties:
+      - lumi_13p6TeV_correlated: 0.013j
+    certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions24/Cert_Collisions2024_378981_386951_Golden.json
+    normtag: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Run3/normtag_BRIL.json
+
+custom_processes:
+
+datasets:
+  data:
+    streams: &streams [e, mu, tau]
+    2022:
+      - preEE:
+          periods: &preEE_periods [c, d]
+      - postEE:
+          periods: &postEE_periods [e, f, g]
+    2023:
+      - preBPix:
+          periods: &preBPix_periods [c1, c2, c3, c4]
+      - postBPix:
+          periods: &postBPix_periods [d1, d2]
+
+  signal:
+    nonresonant:
+      ggf:
+        tag:
+        cmsdb:
+          - hh_ggf_hbb_htt_kl1_kt1_powheg
+          - hh_ggf_hbb_htt_kl0_kt1_powheg
+          - hh_ggf_hbb_htt_kl2p45_kt1_powheg
+          - hh_ggf_hbb_htt_kl5_kt1_powheg
+          - hh_ggf_hbb_htt_kl0_kt1_c21_powheg
+          - hh_ggf_hbb_htt_kl1_kt1_c23_powheg
+          - hh_ggf_htt_hvv_kl1_kt1_powheg
+          - hh_ggf_htt_hvv_kl0_kt1_powheg
+          - hh_ggf_htt_hvv_kl5_kt1_powheg
+          - hh_ggf_hvv_hvv_kl1_kt1_powheg
+          - hh_ggf_hvv_hvv_kl0_kt1_powheg
+          - hh_ggf_hvv_hvv_kl5_kt1_powheg
+      vbf:
+        tag:
+        cmsdb:
+          - hh_vbf_hbb_htt_kv1_k2v1_kl1_madgraph
+          - hh_vbf_hbb_htt_kv1_k2v0_kl1_madgraph
+          - hh_vbf_hbb_htt_kv1_k2v1_kl2_madgraph
+          - hh_vbf_hbb_htt_kv1_k2v2_kl1_madgraph
+          - hh_vbf_hbb_htt_kv1p74_k2v1p37_kl14p4_madgraph
+          - hh_vbf_hbb_htt_kvm0p012_k2v0p03_kl10p2_madgraph
+          - hh_vbf_hbb_htt_kvm0p758_k2v1p44_klm19p3_madgraph
+          - hh_vbf_hbb_htt_kvm0p962_k2v0p959_klm1p43_madgraph
+          - hh_vbf_hbb_htt_kvm1p21_k2v1p94_klm0p94_madgraph
+          - hh_vbf_hbb_htt_kvm1p6_k2v2p72_klm1p36_madgraph
+          - hh_vbf_hbb_htt_kvm1p83_k2v3p57_klm3p39_madgraph
+          - hh_vbf_hbb_htt_kvm2p12_k2v3p87_klm5p96_madgraph
+          - hh_vbf_htt_htt_kv1_k2v1_kl1_madgraph
+          - hh_vbf_htt_htt_kv1_k2v0_kl1_madgraph
+          - hh_vbf_htt_htt_kv1p74_k2v1p37_madgraph
+          - hh_vbf_htt_htt_kvm0p012_k2v0p03_madgraph
+          - hh_vbf_htt_htt_kvm0p758_k2v1p44_madgraph
+          - hh_vbf_htt_htt_kvm0p962_k2v0p959_madgraph
+          - hh_vbf_htt_htt_kvm1p21_k2v1p94_madgraph
+          - hh_vbf_htt_htt_kvm1p6_k2v2p72_madgraph
+          - hh_vbf_htt_htt_kvm1p83_k2v3p57_madgraph
+          - hh_vbf_htt_htt_kvm2p12_k2v3p87_madgraph
+          - hh_vbf_htt_htt_kv1p74_k2v1p37_kl14p4_madgraph
+          - hh_vbf_htt_htt_kvm0p012_k2v0p03_kl10p2_madgraph
+          - hh_vbf_htt_htt_kvm0p758_k2v1p44_klm19p3_madgraph
+          - hh_vbf_htt_htt_kvm0p962_k2v0p959_klm1p43_madgraph
+          - hh_vbf_htt_htt_kvm1p21_k2v1p94_klm0p94_madgraph
+          - hh_vbf_htt_htt_kvm1p6_k2v2p72_klm1p36_madgraph
+          - hh_vbf_htt_htt_kvm1p83_k2v3p57_klm3p39_madgraph
+          - hh_vbf_htt_htt_kvm2p12_k2v3p87_klm5p96_madgraph
+          - hh_vbf_htt_hvv_kv1_k2v1_kl1_madgraph
+          - hh_vbf_htt_hvv_kv1_k2v0_kl1_madgraph
+          - hh_vbf_htt_hvv_kv1p74_k2v1p37_madgraph
+          - hh_vbf_htt_hvv_kvm0p012_k2v0p03_madgraph
+          - hh_vbf_htt_hvv_kvm0p758_k2v1p44_madgraph
+          - hh_vbf_htt_hvv_kvm0p962_k2v0p959_madgraph
+          - hh_vbf_htt_hvv_kvm1p21_k2v1p94_madgraph
+          - hh_vbf_htt_hvv_kvm1p6_k2v2p72_madgraph
+          - hh_vbf_htt_hvv_kvm1p83_k2v3p57_madgraph
+          - hh_vbf_htt_hvv_kvm2p12_k2v3p87_madgraph
+          - hh_vbf_htt_hvv_kv1p74_k2v1p37_kl14p4_madgraph
+          - hh_vbf_htt_hvv_kvm0p012_k2v0p03_kl10p2_madgraph
+          - hh_vbf_htt_hvv_kvm0p758_k2v1p44_klm19p3_madgraph
+          - hh_vbf_htt_hvv_kvm0p962_k2v0p959_klm1p43_madgraph
+          - hh_vbf_htt_hvv_kvm1p21_k2v1p94_klm0p94_madgraph
+          - hh_vbf_htt_hvv_kvm1p6_k2v2p72_klm1p36_madgraph
+          - hh_vbf_htt_hvv_kvm1p83_k2v3p57_klm3p39_madgraph
+          - hh_vbf_htt_hvv_kvm2p12_k2v3p87_klm5p96_madgraph
+          - hh_vbf_hvv_hvv_kv1_k2v1_kl1_madgraph
+          - hh_vbf_hvv_hvv_kv1_k2v0_kl1_madgraph
+          - hh_vbf_hvv_hvv_kv1p74_k2v1p37_madgraph
+          - hh_vbf_hvv_hvv_kvm0p012_k2v0p03_madgraph
+          - hh_vbf_hvv_hvv_kvm0p758_k2v1p44_madgraph
+          - hh_vbf_hvv_hvv_kvm0p962_k2v0p959_madgraph
+          - hh_vbf_hvv_hvv_kvm1p21_k2v1p94_madgraph
+          - hh_vbf_hvv_hvv_kvm1p6_k2v2p72_madgraph
+          - hh_vbf_hvv_hvv_kvm1p83_k2v3p57_madgraph
+          - hh_vbf_hvv_hvv_kvm2p12_k2v3p87_madgraph
+          - hh_vbf_hvv_hvv_kv1p74_k2v1p37_kl14p4_madgraph
+          - hh_vbf_hvv_hvv_kvm0p012_k2v0p03_kl10p2_madgraph
+          - hh_vbf_hvv_hvv_kvm0p758_k2v1p44_klm19p3_madgraph
+          - hh_vbf_hvv_hvv_kvm0p962_k2v0p959_klm1p43_madgraph
+          - hh_vbf_hvv_hvv_kvm1p21_k2v1p94_klm0p94_madgraph
+          - hh_vbf_hvv_hvv_kvm1p6_k2v2p72_klm1p36_madgraph
+          - hh_vbf_hvv_hvv_kvm1p83_k2v3p57_klm3p39_madgraph
+          - hh_vbf_hvv_hvv_kvm2p12_k2v3p87_klm5p96_madgraph
+      resonant:
+        tag:
+        cmsdb:
+          - radion_hh_ggf_hbb_htt_m450_madgraph
+          - radion_hh_ggf_hbb_htt_m1200_madgraph
+          - graviton_hh_ggf_hbb_htt_m450_madgraph
+          - graviton_hh_ggf_hbb_htt_m1200_madgraph
+
+  background:
+    ttbar:
+      tag: ["has_top", "ttbar", "tt"]
+      cmsdb: 
+        - tt_sl_powheg
+        - tt_dl_powheg
+        - tt_fh_powheg
+    single_top:
+      tag: ["has_top", "single_top", "st"]
+      cmsdb: 
+          - st_tchannel_t_4f_powheg
+          - st_tchannel_tbar_4f_powheg
+          - st_twchannel_t_sl_powheg
+          - st_twchannel_tbar_sl_powheg
+          - st_schannel_t_lep_4f_amcatnlo
+          - st_schannel_tbar_lep_4f_amcatnlo
+    ttv: 
+      tag:
+      cmsdb: 
+        - ttw_wlnu_amcatnlo
+        - ttz_zqq_amcatnlo
+        - ttz_zll_m4to50_amcatnlo
+        - ttz_zll_m50toinf_amcatnlo
+    ttvv:
+      tag:
+      cmsdb: 
+        - ttww_madgraph
+        - ttzz_madgraph
+    dy:
+      tag:
+      cmsdb: 
+        - dy_m4to10_amcatnlo
+        - dy_m10to50_amcatnlo
+        - dy_m50toinf_amcatnlo
+        - dy_m50toinf_0j_amcatnlo
+        - dy_m50toinf_1j_amcatnlo
+        - dy_m50toinf_2j_amcatnlo
+        - dy_m50toinf_1j_pt40to100_amcatnlo
+        - dy_m50toinf_1j_pt100to200_amcatnlo
+        - dy_m50toinf_1j_pt200to400_amcatnlo
+        - dy_m50toinf_1j_pt400to600_amcatnlo
+        - dy_m50toinf_1j_pt600toinf_amcatnlo
+        - dy_m50toinf_2j_pt40to100_amcatnlo
+        - dy_m50toinf_2j_pt100to200_amcatnlo
+        - dy_m50toinf_2j_pt200to400_amcatnlo
+        - dy_m50toinf_2j_pt400to600_amcatnlo
+        - dy_m50toinf_2j_pt600toinf_amcatnlo
+    wjets: 
+      tag:
+      cmsdb: 
+        - w_lnu_amcatnlo
+        - w_lnu_0j_amcatnlo
+        - w_lnu_1j_amcatnlo
+        - w_lnu_2j_amcatnlo
+        - w_lnu_1j_pt40to100_amcatnlo
+        - w_lnu_1j_pt100to200_amcatnlo
+        - w_lnu_1j_pt200to400_amcatnlo
+        - w_lnu_1j_pt400to600_amcatnlo
+        - w_lnu_1j_pt600toinf_amcatnlo
+        - w_lnu_2j_pt40to100_amcatnlo
+        - w_lnu_2j_pt100to200_amcatnlo
+        - w_lnu_2j_pt200to400_amcatnlo
+        - w_lnu_2j_pt400to600_amcatnlo
+        - w_lnu_2j_pt600toinf_amcatnlo
+        - w_vbf_wlnu_madgraph
+        - z_vbf_zll_m50toinf_madgraph
+  #    zqq: # negligible  drop for now  
+  #      tag:
+  #      cmsdb: 
+  #        - z_qq_1j_pt100to200_amcatnlo
+  #        - z_qq1j_pt200to400_amcatnlo
+  #        - z_qq1j_pt400to600_amcatnlo
+  #        - z_qq1j_pt600toinf_amcatnlo
+  #        - z_qq2j_pt100to200_amcatnlo
+  #        - z_qq2j_pt200to400_amcatnlo
+  #        - z_qq2j_pt400to600_amcatnlo
+  #        - z_qq2j_pt600toinf_amcatnlo
+    qcd:
+      tag:
+      cmsdb:
+        - qcd_mu_pt15to20_pythia
+        - qcd_mu_pt20to30_pythia
+        - qcd_mu_pt30to50_pythia
+        - qcd_mu_pt50to80_pythia
+        - qcd_mu_pt80to120_pythia
+        - qcd_mu_pt120to170_pythia
+        - qcd_mu_pt170to300_pythia
+        - qcd_mu_pt300to470_pythia
+        - qcd_mu_pt470to600_pythia
+        - qcd_mu_pt600to800_pythia
+        - qcd_mu_pt800to1000_pythia
+        - qcd_mu_pt1000toinf_pythia
+        - qcd_em_pt10to30_pythia
+        - qcd_em_pt30to50_pythia
+        - qcd_em_pt50to80_pythia
+        - qcd_em_pt80to120_pythia
+        - qcd_em_pt120to170_pythia
+        - qcd_em_pt170to300_pythia
+        - qcd_em_pt300toinf_pythia
+    
+    diboson: 
+      tag: ["no_lhe_weights"]
+      cmsdb:
+        - zz_pythia
+        - wz_pythia
+        - ww_pythia
+    triboson: 
+      tag: 
+      cmsdb:
+        - www_4f_amcatnlo
+        - wwz_4f_amcatnlo
+        - wzz_amcatnlo
+        - zzz_amcatnlo
+    single_higgs:
+      tag:
+      cmsdb:
+        - h_ggf_htt_powheg
+        - h_ggf_hbb_powheg
+        - h_vbf_htt_powheg
+        - h_vbf_hbb_powheg
+        - wmh_wlnu_hbb_powheg
+        - wph_wlnu_hbb_powheg
+        - wph_htt_powheg
+        - wmh_htt_powheg
+        - wph_wqq_hbb_powheg
+        - wmh_wqq_hbb_powheg
+        - zh_zll_hbb_powheg
+        - zh_zqq_hbb_powheg
+        - zh_htt_powheg
+        - zh_gg_zll_hbb_powheg
+        - zh_gg_zqq_hbb_powheg
+        - zh_gg_znunu_hbb_powheg
+        - tth_hbb_powheg
+        - tth_hnonbb_powheg
+ 
+  
+external_files:
+  pog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG"
+  hh_btag_repo: "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz"
+  trigger: "https://gitlab.cern.ch/cclubbtautau/AnalysisCore/-/archive/59ae66c4a39d3e54afad5733895c33b1fb511c47/AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47.tar.gz"  # noqa: E50
+
+
+channels:
+  etau:
+    id: 1
+    label: "$e\\tau_{h}$"
+  mutau: 
+    id: 2
+    label: "$\\mu\\tau_{h}$"
+  tautau: 
+    id: 3
+    label: "$\\tau_{h}\\tau_{h}$"
+    # ... other channels
+
+# (names derived from contents in BTV correctionlib file)
+btag_sf_jec_sources:
+  - Absolute
+  - AbsoluteMPFBias
+  - AbsoluteScale
+  - AbsoluteStat
+  - BBEC1
+  - EC2
+  - FlavorQCD
+  - Fragmentation
+  - HF
+  - PileUpDataMC
+  - PileUpPtBB
+  - PileUpPtEC1
+  - PileUpPtEC2
+  - PileUpPtHF
+  - PileUpPtRef
+  - RelativeBal
+  - RelativeFSR
+  - RelativeJEREC1
+  - RelativeJEREC2
+  - RelativeJERHF
+  - RelativePtBB
+  - RelativePtEC1
+  - RelativePtEC2
+  - RelativePtHF
+  - RelativeSample
+  - RelativeStatEC
+  - RelativeStatFSR
+  - RelativeStatHF
+  - SinglePionECAL
+  - SinglePionHCAL
+  - TimePtEta
+
+# full list of jec sources in a fixed order that is used to assign consistent ids across configs
+# (please add new sources at the bottom to preserve the order of existing ones)
+jec_sources:
+  - AbsoluteStat
+  - AbsoluteScale
+  - AbsoluteSample
+  - AbsoluteFlavMap
+  - AbsoluteMPFBias
+  - Fragmentation
+  - SinglePionECAL
+  - SinglePionHCAL
+  - FlavorQCD
+  - TimePtEta
+  - RelativeJEREC1
+  - RelativeJEREC2
+  - RelativeJERHF
+  - RelativePtBB
+  - RelativePtEC1
+  - RelativePtEC2
+  - RelativePtHF
+  - RelativeBal
+  - RelativeSample
+  - RelativeFSR
+  - RelativeStatFSR
+  - RelativeStatEC
+  - RelativeStatHF
+  - PileUpDataMC
+  - PileUpPtRef
+  - PileUpPtBB
+  - PileUpPtEC1
+  - PileUpPtEC2
+  - PileUpPtHF
+  - PileUpMuZero
+  - PileUpEnvelope
+  - SubTotalPileUp
+  - SubTotalRelative
+  - SubTotalPt
+  - SubTotalScale
+  - SubTotalAbsolute
+  - SubTotalMC
+  - Total
+  - TotalNoFlavor
+  - TotalNoTime
+  - TotalNoFlavorNoTime
+  - FlavorZJet
+  - FlavorPhotonJet
+  - FlavorPureGluon
+  - FlavorPureQuark
+  - FlavorPureCharm
+  - FlavorPureBottom
+  - TimeRunA
+  - TimeRunB
+  - TimeRunC
+  - TimeRunD
+  - CorrelationGroupMPFInSitu
+  - CorrelationGroupIntercalibration
+  - CorrelationGroupbJES
+  - CorrelationGroupFlavor
+  - CorrelationGroupUncorrelated

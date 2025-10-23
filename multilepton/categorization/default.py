@@ -6,6 +6,7 @@ HH -> multi-leptons selection methods.
 
 from columnflow.categorization import Categorizer, categorizer
 from columnflow.util import maybe_import
+import inspect
 
 ak = maybe_import("awkward")
 
@@ -448,7 +449,7 @@ def cat_nontrigmatch_bdt(self: Categorizer, events: ak.Array, **kwargs) -> tuple
     # trig match false
     return events, events.trig_match_bdt == 0
 
-# tight and trigger matching flags for the physical channels
+# Tight and trigger matching flags for the physical channels
 @categorizer(uses={"tight_sel"})
 def cat_tight(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
     # tight true
@@ -469,9 +470,7 @@ def cat_nontrigmatch(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.
     # trig match false
     return events, events.trig_match == 0
 
-#
 # QCD regions
-#
 @categorizer(uses={"leptons_os"})
 def cat_os(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
     # oppositive sign leptons
@@ -492,9 +491,7 @@ def cat_noniso(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array,
     # noon-isolated tau2
     return events, events.tau2_isolated == 0
 
-#
 # kinematic regions
-#
 @categorizer(uses={"event"})
 def cat_incl(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.Array]:
     # fully inclusive selection
@@ -554,3 +551,9 @@ def cat_tt(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.
 @cat_tt.init
 def cat_tt_init(self: Categorizer) -> None:
     self.uses.add(f"{self.config_inst.x.met_name}.{{pt,phi}}")
+
+try:
+    _register_channel_categorizers()
+except Exception:
+    pass
+

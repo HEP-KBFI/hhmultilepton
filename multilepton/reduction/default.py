@@ -12,11 +12,9 @@ from columnflow.util import maybe_import
 
 from multilepton.util import IF_DATASET_HAS_TOP, IF_DATASET_IS_DY
 
+
 ak = maybe_import("awkward")
-
-
 gen_parton_top = cf_gen_parton_top.derive("gen_parton_top", cls_dict={"require_dataset_tag": None})
-
 
 @reducer(
     uses={

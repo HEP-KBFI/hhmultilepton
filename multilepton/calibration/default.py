@@ -17,7 +17,9 @@ from columnflow.production.cms.seeds import (
     deterministic_event_seeds, deterministic_jet_seeds, deterministic_electron_seeds,
 )
 from columnflow.util import maybe_import
+
 from multilepton.util import IF_RUN_2, IF_RUN_3, IF_DATA, IF_MC
+
 
 ak = maybe_import("awkward")
 
@@ -107,7 +109,6 @@ def default(self: Calibrator, events: ak.Array, **kwargs) -> ak.Array:
     # apply met phi correction
     if self.has_dep(self.met_phi_cls):
         events = self[self.met_phi_cls](events, **kwargs)
-
     return events
 
 

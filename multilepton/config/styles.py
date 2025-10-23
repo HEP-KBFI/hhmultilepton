@@ -18,7 +18,7 @@ def setup_plot_styles(config: od.Config) -> None:
     """
     # general settings
     config.x.default_general_settings = {
-        "cms_label": "wip",
+        "cms_label": "Work-in-progress",
         "whitespace_fraction": 0.31,
     }
 

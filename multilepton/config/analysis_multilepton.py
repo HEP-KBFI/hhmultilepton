@@ -12,12 +12,13 @@ import order as od
 
 from columnflow.util import DotDict
 
+from multilepton.hist_hooks.blinding import add_hooks as add_blinding_hooks
+from multilepton.hist_hooks.qcd import add_hooks as add_qcd_hooks
+from multilepton.hist_hooks.binning import add_hooks as add_binning_hooks
 from multilepton.tasks.base import MultileptonTask
 from multilepton.config.configs_multilepton import add_config
 
-#
-# the main analysis object
-#
+
 
 analysis_multilepton = od.Analysis(
     name="analysis_multilepton",
@@ -39,13 +40,12 @@ analysis_multilepton.x.bash_sandboxes = [
 # files of cmssw sandboxes that might be required by remote tasks
 # (used in cf.HTCondorWorkflow)
 analysis_multilepton.x.cmssw_sandboxes = [
-    # "$CF_BASE/sandboxes/cmssw_default.sh",
+# "$CF_BASE/sandboxes/cmssw_default.sh",
 ]
 
-################################################################################################
+#=======================================
 # analysis-wide groups and defaults
-################################################################################################
-
+#=======================================
 # config groups for conveniently looping over certain configs
 # (used in wrapper_factory)
 analysis_multilepton.x.config_groups = {}
@@ -53,27 +53,14 @@ analysis_multilepton.x.config_groups = {}
 # named function hooks that can modify store_parts of task outputs if needed
 analysis_multilepton.x.store_parts_modifiers = {}
 
-################################################################################################
+#=======================================
 # hist hooks
-################################################################################################
-
+#=======================================
 analysis_multilepton.x.hist_hooks = DotDict()
-
-# simple blinding
-from multilepton.hist_hooks.blinding import add_hooks as add_blinding_hooks
 add_blinding_hooks(analysis_multilepton)
-
-# qcd estimation
-from multilepton.hist_hooks.qcd import add_hooks as add_qcd_hooks
 add_qcd_hooks(analysis_multilepton)
-
-# binning
-from multilepton.hist_hooks.binning import add_hooks as add_binning_hooks
 add_binning_hooks(analysis_multilepton)
 
-#
-# define configs
-#
 
 def add_lazy_config(
     *,
@@ -98,7 +85,6 @@ def add_lazy_config(
             #current_task = MultileptonTask.get_current_task()
             #if current_task and current_task.limit_dataset_files != -1:
             #    limit_dataset_files = current_task.limit_dataset_files
-            print( 'helooooooo', limit_dataset_files , add_limited)
             return add_config(
                 analysis_multilepton,
                 campaign.copy(),
@@ -111,139 +97,85 @@ def add_lazy_config(
 
     analysis_multilepton.configs.add_lazy_factory(config_name, create_factory(config_id))
     if add_limited:
-        analysis_multilepton.configs.add_lazy_factory(f"{config_name}_limited", create_factory(config_id + 200, "_limited", 1))  # noqa: 501
+        analysis_multilepton.configs.add_lazy_factory(f"{config_name}_limited", 
+                create_factory(config_id + 200, "_limited", 1))
 
-
-# 2022, preEE
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2022_preEE_nano_uhh_v14",
-    campaign_attr="campaign_run3_2022_preEE_nano_uhh_v14",
-    config_name="22pre_v14",
-    config_id=5014,
-)
-
-# 2022, postEE
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2022_postEE_nano_uhh_v14",
-    campaign_attr="campaign_run3_2022_postEE_nano_uhh_v14",
-    config_name="22post_v14",
-    config_id=6014,
-    add_limited=True,
-)
-
+#=======================================
+# Priavte uhh NanoAOD datasets configs
+#=======================================
 # 2022, preEE, v14
 add_lazy_config(
+    campaign_module="cmsdb.campaigns.run3_2022_preEE_nano_uhh_v14",
+    campaign_attr="campaign_run3_2022_preEE_nano_uhh_v14",
+    config_name="22preEE_v14_private",
+    config_id=5014,
+    add_limited=False,
+)
+# 2022, postEE, v14
+add_lazy_config(
     campaign_module="cmsdb.campaigns.run3_2022_postEE_nano_uhh_v14",
     campaign_attr="campaign_run3_2022_postEE_nano_uhh_v14",
-    config_name="22post_v14_sync",
-    config_id=6114,
+    config_name="22postEE_v14_private",
+    config_id=6014,
     add_limited=False,
-    sync_mode=True,
 )
-
+# 2022, preEE, v14
 add_lazy_config(
     campaign_module="cmsdb.campaigns.run3_2022_preEE_nano_uhh_v14",
     campaign_attr="campaign_run3_2022_preEE_nano_uhh_v14",
-    config_name="22pre_v14_sync",
+    config_name="22preEE_v14_private",
     config_id=5114,
     add_limited=False,
-    sync_mode=True,
 )
-
-# 2023, preBPix
+# 2023, preBPix, v14
 add_lazy_config(
     campaign_module="cmsdb.campaigns.run3_2023_preBPix_nano_uhh_v14",
     campaign_attr="campaign_run3_2023_preBPix_nano_uhh_v14",
-    config_name="23pre_v14",
+    config_name="23preBPix_v14_private",
     config_id=7014,
+    add_limited=False,
 )
-
-# 2023, postBPix
+# 2023, postBPix, v14
 add_lazy_config(
     campaign_module="cmsdb.campaigns.run3_2023_postBPix_nano_uhh_v14",
     campaign_attr="campaign_run3_2023_postBPix_nano_uhh_v14",
-    config_name="23post_v14",
+    config_name="23postBPix_v14_private",
     config_id=8014,
+    add_limited=False,
 )
 
-#
-# sync configs
-#
-
-# 2022, preEE
+#=======================================
+# Central NanoAOD datasets configs
+#=======================================
+# 2022, preEE, v12
 add_lazy_config(
     campaign_module="cmsdb.campaigns.run3_2022_preEE_nano_v12",
     campaign_attr="campaign_run3_2022_preEE_nano_v12",
-    config_name="22pre_v12_sync",
-    config_id=5112,
-    add_limited=False,
-    sync_mode=True,
-)
-
-# 2022, postEE
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2022_postEE_nano_v12",
-    campaign_attr="campaign_run3_2022_postEE_nano_v12",
-    config_name="22post_v12_sync",
-    config_id=6112,
-    add_limited=True,
-    sync_mode=True,
-)
-
-# 2023, preBPix
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2023_preBPix_nano_v13",
-    campaign_attr="campaign_run3_2023_preBPix_nano_v13",
-    config_name="23pre_v13_sync",
-    config_id=7113,
-    add_limited=False,
-    sync_mode=True,
-)
-
-# 2023, postBPix
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2023_postBPix_nano_v13",
-    campaign_attr="campaign_run3_2023_postBPix_nano_v13",
-    config_name="23post_v13_sync",
-    config_id=8113,
-    add_limited=True,
-    sync_mode=True,
-)
-
-#
-# non private Nano configs
-# 
-
-
-# 2022, preEE v12
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2022_preEE_nano_v12",
-    campaign_attr="campaign_run3_2022_preEE_nano_v12",
-    config_name="22pre_v12_central",
+    config_name="22preEE_v12_central",
     config_id=5012,
+    add_limited=False,
 )
-
-# 2022, postEE v12
+# 2022, postEE, v12
 add_lazy_config(
     campaign_module="cmsdb.campaigns.run3_2022_postEE_nano_v12",
     campaign_attr="campaign_run3_2022_postEE_nano_v12",
-    config_name="22post_v12_central",
+    config_name="22postEE_v12_central",
     config_id=6012,
+    add_limited=False,
 )
-
-# 2023, preBPix v12
+# 2023, preBPix, v12
 add_lazy_config(
     campaign_module="cmsdb.campaigns.run3_2023_preBPix_nano_v12",
     campaign_attr="campaign_run3_2023_preBPix_nano_v12",
-    config_name="23pre_v12_central",
+    config_name="23preBPix_v12_central",
     config_id=7012,
+    add_limited=False,
 )
-
-# 2023, postBPix v12
+# 2023, postBPix, v12
 add_lazy_config(
     campaign_module="cmsdb.campaigns.run3_2023_postBPix_nano_v12",
     campaign_attr="campaign_run3_2023_postBPix_nano_v12",
-    config_name="23post_v12",
+    config_name="23postBPix_v12_central",
     config_id=8012,
-    add_limited=True
+    add_limited=False,
 )
