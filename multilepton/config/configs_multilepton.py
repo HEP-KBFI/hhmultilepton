@@ -598,6 +598,20 @@ def add_config(
                 cfg.add_process(proc, id)
                 dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
                 # Add tags to the process, not the string
+                       # datasets that are known to have no lhe info at all
+                if law.util.multi_match(dataset.name, [
+                    r"^(ww|wz|zz)_.*pythia$",
+                    r"^tt(w|z)_.*amcatnlo$",
+                    ]):
+                    dataset.add_tag("no_lhe_weights")
+                if re.match(r"^dy_m50toinf_\dj_(|pt.+_)amcatnlo$", dataset.name):
+                    dataset.add_tag("dy_stitched")
+                if re.match(r"^w_lnu_\dj_(|pt.+_)amcatnlo$", dataset.name):
+                    dataset.add_tag("w_lnu_stitched")
+                # datasets that are allowed to contain some events with missing lhe infos
+                # (known to happen for amcatnlo)
+                if dataset.name.endswith("_amcatnlo") or re.match(r"^z_vbf_.*madgraph$", dataset.name):
+                    dataset.add_tag("partial_lhe_weights")
                 for tag in (t for t in law.util.make_set(tags) if t is not None):
                     dataset.add_tag(tag)
                 if limit_dataset_files:
@@ -630,6 +644,12 @@ def add_config(
                 # bad ecalBadCalibFilter MET filter in 2022 data
                 # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2?rev=172#ECal_BadCalibration_Filter_Flag
                 # https://cms-talk.web.cern.ch/t/noise-met-filters-in-run-3/63346/5
+                if dataset.name.startswith("data_e_"):
+                    dataset.add_tag({"etau", "emu_from_e", "ee"})
+                if dataset.name.startswith("data_mu_"):
+                    dataset.add_tag({"mutau", "emu_from_mu", "mumu"})
+                if dataset.name.startswith("data_tau_"):
+                    dataset.add_tag({"tautau"})
                 if year == 2022 and dataset.is_data and dataset.x.era in "FG":
                     dataset.add_tag("broken_ecalBadCalibFilter")
                 if limit_dataset_files:

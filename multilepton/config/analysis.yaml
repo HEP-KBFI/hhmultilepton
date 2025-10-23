@@ -1,6 +1,5 @@
 Analysis:
   name: "multilepton"
-label: "HH → multi-leptons"
 
 # https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmVRun3Analysis?rev=161
 years:
@@ -89,7 +88,7 @@ datasets:
   signal:
     nonresonant:
       ggf:
-        tag:
+        tag: ["ggf", "nonresonant_signal", "signal"]
         cmsdb:
           - hh_ggf_hbb_htt_kl1_kt1_powheg
           - hh_ggf_hbb_htt_kl0_kt1_powheg
@@ -104,7 +103,7 @@ datasets:
           - hh_ggf_hvv_hvv_kl0_kt1_powheg
           - hh_ggf_hvv_hvv_kl5_kt1_powheg
       vbf:
-        tag:
+        tag: ["vbf", "nonresonant_signal", "signal"]
         cmsdb:
           - hh_vbf_hbb_htt_kv1_k2v1_kl1_madgraph
           - hh_vbf_hbb_htt_kv1_k2v0_kl1_madgraph
@@ -173,7 +172,7 @@ datasets:
           - hh_vbf_hvv_hvv_kvm1p83_k2v3p57_klm3p39_madgraph
           - hh_vbf_hvv_hvv_kvm2p12_k2v3p87_klm5p96_madgraph
       resonant:
-        tag:
+        tag: ["resonant_signal", "signal"]
         cmsdb:
           - radion_hh_ggf_hbb_htt_m450_madgraph
           - radion_hh_ggf_hbb_htt_m1200_madgraph
@@ -197,19 +196,19 @@ datasets:
           - st_schannel_t_lep_4f_amcatnlo
           - st_schannel_tbar_lep_4f_amcatnlo
     ttv: 
-      tag:
+      tag: ["ttbar", "tt"]
       cmsdb: 
         - ttw_wlnu_amcatnlo
         - ttz_zqq_amcatnlo
         - ttz_zll_m4to50_amcatnlo
         - ttz_zll_m50toinf_amcatnlo
     ttvv:
-      tag:
+      tag: ["ttbar", "tt"]
       cmsdb: 
         - ttww_madgraph
         - ttzz_madgraph
     dy:
-      tag:
+      tag: ["dy"]
       cmsdb: 
         - dy_m4to10_amcatnlo
         - dy_m10to50_amcatnlo
@@ -228,7 +227,7 @@ datasets:
         - dy_m50toinf_2j_pt400to600_amcatnlo
         - dy_m50toinf_2j_pt600toinf_amcatnlo
     wjets: 
-      tag:
+      tag: ["w_lnu"]
       cmsdb: 
         - w_lnu_amcatnlo
         - w_lnu_0j_amcatnlo
