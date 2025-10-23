@@ -120,7 +120,7 @@ class AnalysisConfig:
                     for item in node:
                         extract_cmsdb_entries(item)
             extract_cmsdb_entries(category_data)
-        return process_names
+        return sorted(set(process_names))
 
     
 
@@ -558,79 +558,61 @@ def add_config(
     ConfigureTaus(cfg, run, campaign)
     ConfigureElectrons(cfg, run, year, campaign)
     ConfigureMuons(cfg, run, year, campaign)
-    #ConfigureLFNS(cfg, limit_dataset_files)
+    ConfigureLFNS(cfg, limit_dataset_files)
     
     #=============================================
     # processes and datasets - using YAML configuration
     #=============================================
     dataset_names = []
     datasets_config = analysis_data.get("datasets", {})
-    process_names = analysis_cfg.get_process_list("all")
-   
+
     # Loop over signal and background
     for dtype in ['signal', 'background']:
-        for group, dCfg in datasets_config.get(dtype, {}).items():
-            # Handle special case (QCD)
-            if group == "qcd":
-                from cmsdb.processes.qcd import qcd
-                cfg.add_process(qcd)
-                dataset_names.extend(qcd.names if hasattr(qcd, "names") else [])
+        print ( analysis_cfg.get_process_list(dtype) )
+        for dataset_name in analysis_cfg.get_process_list(dtype):
+            tags = []
+            proc, id = convert_dataset_to_process(dataset_name, campaign, all_processes_from_campaign)
+            print( 'working on ....', dataset_name , proc, id, campaign.has_dataset(dataset_name))
+            if id is None or not campaign.has_dataset(dataset_name):
                 continue
-            # Recursively find cmsdb lists
-            def extract_cmsdb_entries(node):
-                if isinstance(node, dict):
-                    if "cmsdb" in node:
-                        return node["cmsdb"]
-                    result = []
-                    for value in node.values():
-                        result.extend(extract_cmsdb_entries(value))
-                    return result
-                return []
-            datasets = extract_cmsdb_entries(dCfg)
-            tags = dCfg.get("tag", [])
-             
-            for dataset_name in datasets:
-                dataset_names.append(dataset_name)
-                proc, id = convert_dataset_to_process(dataset_name, campaign, all_processes_from_campaign)
-                if id is None or not campaign.has_dataset(dataset_name):
-                    continue
-                cfg.add_process(proc, id)
-                dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
-                # Add tags to the process, not the string
-                       # datasets that are known to have no lhe info at all
-                if law.util.multi_match(dataset.name, [
-                    r"^(ww|wz|zz)_.*pythia$",
-                    r"^tt(w|z)_.*amcatnlo$",
-                    ]):
-                    dataset.add_tag("no_lhe_weights")
-                if re.match(r"^dy_m50toinf_\dj_(|pt.+_)amcatnlo$", dataset.name):
-                    dataset.add_tag("dy_stitched")
-                if re.match(r"^w_lnu_\dj_(|pt.+_)amcatnlo$", dataset.name):
-                    dataset.add_tag("w_lnu_stitched")
-                # datasets that are allowed to contain some events with missing lhe infos
-                # (known to happen for amcatnlo)
-                if dataset.name.endswith("_amcatnlo") or re.match(r"^z_vbf_.*madgraph$", dataset.name):
-                    dataset.add_tag("partial_lhe_weights")
-                for tag in (t for t in law.util.make_set(tags) if t is not None):
-                    dataset.add_tag(tag)
-                if limit_dataset_files:
-                    for info in dataset.info.values():
-                        info.n_files = min(info.n_files, limit_dataset_files)
+            dataset_names.append(dataset_name)
+            cfg.add_process(proc, id)
+            dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
+            # Add tags to the process
+            if law.util.multi_match(dataset.name, [
+                r"^(ww|wz|zz)_.*pythia$",
+                r"^tt(w|z)_.*amcatnlo$",
+                ]):
+                # datasets that are known to have no lhe info at all
+                dataset.add_tag("no_lhe_weights")
+            if re.match(r"^dy_m50toinf_\dj_(|pt.+_)amcatnlo$", dataset.name):
+                dataset.add_tag("dy_stitched")
+            if re.match(r"^w_lnu_\dj_(|pt.+_)amcatnlo$", dataset.name):
+                dataset.add_tag("w_lnu_stitched")
+            # datasets that are allowed to contain some events with missing lhe infos
+            # (known to happen for amcatnlo)
+            if dataset.name.endswith("_amcatnlo") or re.match(r"^z_vbf_.*madgraph$", dataset.name):
+                dataset.add_tag("partial_lhe_weights")
+            for tag in (t for t in law.util.make_set(tags) if t is not None):
+                dataset.add_tag(tag)
+            if limit_dataset_files:
+                for info in dataset.info.values():
+                    info.n_files = min(info.n_files, limit_dataset_files)
     
     # Add data
     streams = datasets_config["data"]["streams"]
     for year, year_cfg in datasets_config["data"].items():
         if year == "streams":
             continue
-    
+        if int(year) != campaign.x.year:
+            continue
         # year_cfg is a list of tag blocks
         for tag_block in year_cfg:
             # tag_block is a dict like {"preEE": {...}}
             for tag, tag_cfg in tag_block.items():
                 periods = tag_cfg["periods"]
     
-                # Example: add dataset names
-                dataset_names += [
+                requested_data = [
                     *if_not_in_config_id(
                         ids=[5012, 6012, 7012, 8012],
                         values=[
@@ -639,22 +621,28 @@ def add_config(
                                 **({"tag": tag} if tag else {}),  # only add tag if it exists
                                 values=[f"data_{stream}_{period}" for stream in streams for period in periods])]
                             )]
-                # Optional: special tag for broken MET filter in 2022
-                # bad ecalBadCalibFilter MET filter in 2022 data
-                # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2?rev=172#ECal_BadCalibration_Filter_Flag
-                # https://cms-talk.web.cern.ch/t/noise-met-filters-in-run-3/63346/5
-                if dataset.name.startswith("data_e_"):
-                    dataset.add_tag({"etau", "emu_from_e", "ee"})
-                if dataset.name.startswith("data_mu_"):
-                    dataset.add_tag({"mutau", "emu_from_mu", "mumu"})
-                if dataset.name.startswith("data_tau_"):
-                    dataset.add_tag({"tautau"})
-                if year == 2022 and dataset.is_data and dataset.x.era in "FG":
-                    dataset.add_tag("broken_ecalBadCalibFilter")
-                if limit_dataset_files:
-                    for info in dataset.info.values():
-                        info.n_files = min(info.n_files, limit_dataset_files)
-    
+                dataset_names += requested_data 
+                for dataset_name in requested_data:
+                    dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
+                    if dataset.name.startswith("data_e_"):
+                        dataset.add_tag({"etau", "emu_from_e", "ee"})
+                    if dataset.name.startswith("data_mu_"):
+                        dataset.add_tag({"mutau", "emu_from_mu", "mumu"})
+                    if dataset.name.startswith("data_tau_"):
+                        dataset.add_tag({"tautau"})
+                    # Optional: special tag for broken MET filter in 2022
+                    # bad ecalBadCalibFilter MET filter in 2022 data
+                    # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2?rev=172#ECal_BadCalibration_Filter_Flag
+                    # https://cms-talk.web.cern.ch/t/noise-met-filters-in-run-3/63346/5
+                    if year == 2022 and dataset.is_data and dataset.x.era in "FG":
+                        dataset.add_tag("broken_ecalBadCalibFilter")
+                    if limit_dataset_files:
+                        for info in dataset.info.values():
+                            info.n_files = min(info.n_files, limit_dataset_files)
+   
+    # verify that the root process of each dataset is part of any of the registered processes
+    verify_config_processes(cfg, warn=True)
+
     # Configure colors, labels, etc
     stylize_processes(cfg)
    
@@ -1094,5 +1082,7 @@ def add_config(
     add_variables(cfg)
     add_met_filters(cfg)
     add_triggers(cfg)
-            
+    
+    for dataset in cfg.datasets:
+        print( dataset.name, 'yesssss')
     return cfg
