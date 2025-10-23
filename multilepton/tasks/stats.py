@@ -4,8 +4,8 @@
 Tasks to print various statistics.
 """
 
+import tabulate
 import functools
-
 import law
 
 from columnflow.tasks.framework.base import ConfigTask
@@ -22,9 +22,7 @@ class ListDatasetStats(MultileptonTask, ConfigTask, law.tasks.RunOnceTask):
     version = None
 
     def run(self):
-        import tabulate
         tabulate.PRESERVE_WHITESPACE = True
-        
         # color helpers
         green = functools.partial(law.util.colored, color="green")
         green_bright = functools.partial(law.util.colored, color="green", style="bright")
@@ -56,10 +54,8 @@ class ListDatasetStats(MultileptonTask, ConfigTask, law.tasks.RunOnceTask):
         
         for dataset_inst in self.config_inst.datasets:
             col = get_color(dataset_inst)
-            
             # nominal info
             rows.append([col(dataset_inst.name), dataset_inst.n_files, dataset_inst.n_events])
-            
             # increment sums
             if dataset_inst.is_data:
                 sum_files_data += dataset_inst.n_files

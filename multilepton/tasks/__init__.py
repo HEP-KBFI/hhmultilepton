@@ -5,4 +5,3 @@
 import multilepton.tasks.base
 import multilepton.tasks.stats
 import multilepton.tasks.studies
-import multilepton.tasks.sync

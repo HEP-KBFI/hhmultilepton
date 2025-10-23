@@ -228,8 +228,8 @@ def add_config(
     
     # get all root processes
     all_processes_from_campaign = get_root_processes_from_campaign(campaign)
-    for proc in all_processes_from_campaign:
-        print( proc)#, proc.name, proc.id) 
+    #for proc in all_processes_from_campaign:
+    #    print( proc)#, proc.name, proc.id) 
     
     # create a config by passing the campaign
     cfg = od.Config(
@@ -393,7 +393,7 @@ def add_config(
         cfg.x.tau_trigger_corrector_cclub = "tauTriggerSF"
         return cfg
 
-    def ConfigureJets(cfg, year, run, campaign):
+    def ConfigureJets(year, run, campaign):
         """
         Configure JEC and JER campaigns and versions for Run 2 and Run 3.
         References:
@@ -488,7 +488,6 @@ def add_config(
                 for fname in lfn_base.listdir(pattern="*.root")
             ]
             return sorted(lfns)
-        print( get_multileptons_dataset_lfns )
         # Attach the retrieval method and related configuration
         cfg.x.get_dataset_lfns = get_multileptons_dataset_lfns
         cfg.x.get_dataset_lfns_sandbox = dev_sandbox("bash::$CF_BASE/sandboxes/cf.sh")
@@ -556,13 +555,13 @@ def add_config(
     lumi_value, lumi_unc = set_luminosity(campaign, year, analysis_data)
     #cfg.x.luminosity = Number(lumi_value, lumi_unc)
    
-    ConfigureJets(cfg, year, run, campaign)
     ConfigureTaus(cfg, run, campaign)
     ConfigureElectrons(cfg, run, year, campaign)
     ConfigureMuons(cfg, run, year, campaign)
-    ConfigureLFNS(cfg, limit_dataset_files)
+    #ConfigureLFNS(cfg, limit_dataset_files)
+    
     #=============================================
-    # LFNS, processes and datasets - using YAML configuration
+    # processes and datasets - using YAML configuration
     #=============================================
     dataset_names = []
     datasets_config = analysis_data.get("datasets", {})
@@ -662,7 +661,7 @@ def add_config(
     #=============================================
     # Jet Energy Corrections (JEC) and Jet Energy Resolution (JER)
     #=============================================
-    jecjerdb = ConfigureJets(cfg, year, run, campaign)
+    jecjerdb = ConfigureJets(year, run, campaign)
     cfg.x.jec = DotDict.wrap({
         "Jet": {
             "campaign": jecjerdb["jec_campaign"],

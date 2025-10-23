@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """
-Configuration of the HH → bb𝜏𝜏 analysis.
+Configuration of the HH → multi-leptons analysis.
 """
 
 from __future__ import annotations

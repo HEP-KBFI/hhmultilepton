@@ -96,7 +96,7 @@ datasets:
           - hh_ggf_hbb_htt_kl5_kt1_powheg
           - hh_ggf_hbb_htt_kl0_kt1_c21_powheg
           - hh_ggf_hbb_htt_kl1_kt1_c23_powheg
-          - hh_ggf_htt_hvv_kl1_kt1_powheg
+            #- hh_ggf_htt_hvv_kl1_kt1_powheg
           - hh_ggf_htt_hvv_kl0_kt1_powheg
           - hh_ggf_htt_hvv_kl5_kt1_powheg
           - hh_ggf_hvv_hvv_kl1_kt1_powheg
