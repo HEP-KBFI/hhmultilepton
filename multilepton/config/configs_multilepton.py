@@ -1692,8 +1692,7 @@ def add_config(
             "deterministic_seed",
             # object info
             "Jet.{pt,eta,phi,mass,hadronFlavour,puId,hhbtag,btag*,nConstituents,deterministic_seed}",
-            "HHBJet.{pt,eta,phi,mass,hadronFlavour,puId,hhbtag,btag*,nConstituents,deterministic_seed}",
-            "NonHHBJet.{pt,eta,phi,mass,hadronFlavour,puId,hhbtag,btag*,nConstituents,deterministic_seed}",
+            "NonCleanedJet.{pt,eta,phi,mass,hadronFlavour,puId,hhbtag,btag*,nConstituents,deterministic_seed}",
             "VBFJet.{pt,eta,phi,mass,hadronFlavour,puId,hhbtag,btag*,nConstituents,deterministic_seed}",
             "FatJet.*",
             "SubJet{1,2}.*",
@@ -1704,10 +1703,12 @@ def add_config(
             "MuonLoose.*",
             "MuonTight.*",
             "Tau.*",
+            "TauNoID.*",
             "TauIso.*",
             "GenPart*",
             f"{cfg.x.met_name}.{{pt,phi,significance,covXX,covXY,covYY}}",
             "PV.npvs",
+            "HLT.*",
             # keep all columns added during selection and reduction, but skip cutflow features
             ColumnCollection.ALL_FROM_SELECTOR,
             skip_column("cutflow.*"),
@@ -1906,5 +1907,4 @@ def add_config(
             f"local_fs_{cfg.campaign.x.custom['name']}",
             f"wlcg_fs_{cfg.campaign.x.custom['name']}",
         ]
-
     return cfg

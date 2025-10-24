@@ -460,11 +460,15 @@ def tau_selection(
     elif is_cross_tau_jet:
         min_pt = None if not is_run3 else 35.0
 
-    # base tau mask for default and qcd sideband tau
-    base_mask = (
+    # no_id mask for tagge rindependent tests
+    noid_mask = (
         (abs(events.Tau.eta) < max_eta) &
         (events.Tau.pt > base_pt) &
-        (abs(events.Tau.dz) < 0.2) &
+        (abs(events.Tau.dz) < 0.2)
+    )
+
+    # base tau mask for default and qcd sideband tau
+    base_mask = noid_mask & (
         reduce(or_, [events.Tau.decayMode == mode for mode in (0, 1, 10, 11)]) &
         (events.Tau[get_tau_tagger("jet")] >= wp_config.tau_vs_jet.vvvloose)
         # vs e and mu cuts are channel dependent and thus applied in the overall lepton selection
@@ -482,7 +486,7 @@ def tau_selection(
     # compute the isolation mask separately as it is used to defined (qcd) categories later on
     iso_mask = events.Tau[get_tau_tagger("jet")] >= wp_config.tau_vs_jet.medium
 
-    return base_mask, trigger_specific_mask, iso_mask
+    return base_mask, trigger_specific_mask, iso_mask, noid_mask
 
 
 @tau_selection.init
@@ -683,6 +687,7 @@ def lepton_selection(
     sel_tightmuon_mask = full_like(events.Muon.pt, False, dtype=bool)
     sel_tau_mask = full_like(events.Tau.pt, False, dtype=bool)
     sel_isotau_mask = full_like(events.Tau.pt, False, dtype=bool)
+    sel_noid_tau_mask = full_like(events.Tau.pt, False, dtype=bool)
     leading_taus = events.Tau[:, :0]
     matched_trigger_ids = []
     lepton_part_trigger_ids = []
@@ -719,12 +724,13 @@ def lepton_selection(
         mu_mask, mu_ctrl, mu_veto = self[muon_selection](events, trigger, **kwargs)
         e_mask_bdt, e_ctrl_bdt, e_veto_bdt = self[electron_selection](events, trigger, ch_key="eormu", **kwargs)
         mu_mask_bdt, mu_ctrl_bdt, mu_veto_bdt = self[muon_selection](events, trigger, ch_key="eormu", **kwargs)
-        tau_mask, tau_trigger_specific_mask, tau_iso_mask = self[tau_selection](events,
+        tau_mask, tau_trigger_specific_mask, tau_iso_mask, noid_tau_mask = self[tau_selection](events,
                                                                                 trigger,
                                                                                 e_mask,
                                                                                 mu_mask,
                                                                                 **kwargs)
-
+        # early studdy tagger independendt taus
+        sel_noid_tau_mask = noid_tau_mask
         if trigger.has_tag({"single_e"}):
             e_match = self[electron_trigger_matching](events, trigger, fired, leg_masks, **kwargs)
             e_trig_any = e_trig_any | fired  # “any single_e fired in this event?”
@@ -1977,6 +1983,7 @@ def lepton_selection(
     sel_electron_indices = sorted_indices_from_mask(sel_electron_mask, events.Electron.pt, ascending=False)
     sel_muon_indices = sorted_indices_from_mask(sel_muon_mask, events.Muon.pt, ascending=False)
     sel_tau_indices = sorted_indices_from_mask(sel_tau_mask, tau_sorting_key, ascending=False)
+    sel_noid_tau_indicies = sorted_indices_from_mask(sel_noid_tau_mask, events.Tau.pt, ascending=False)
 
     sel_looseelectron_indices = sorted_indices_from_mask(sel_looseelectron_mask, events.Electron.pt, ascending=False)
     sel_loosemuon_indices = sorted_indices_from_mask(sel_loosemuon_mask, events.Muon.pt, ascending=False)
@@ -2003,6 +2010,7 @@ def lepton_selection(
             "Tau": {
                 "Tau": sel_tau_indices,
                 "TauIso": sel_isotau_indices,
+                "TauNoID": sel_noid_tau_indicies,
             },
         },
         aux={
