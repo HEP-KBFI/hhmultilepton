@@ -1,13 +1,11 @@
 # coding: utf-8
-
 """
-Configuration of the HH → multi-leptons analysis.
+Configuration of the HH → multileptons analysis.
 """
 
 from __future__ import annotations
 
 import importlib
-
 import order as od
 
 from columnflow.util import DotDict
@@ -19,49 +17,43 @@ from multilepton.tasks.base import MultileptonTask
 from multilepton.config.configs_multilepton import add_config
 
 
+# =======================================
+# Analysis Definition
+# =======================================
+analysis_multilepton = od.Analysis(name="analysis_multilepton", id=1)
 
-analysis_multilepton = od.Analysis(
-    name="analysis_multilepton",
-    id=1,
-)
-
-# analysis-global versions
-# (empty since we use the lookup from the law.cfg instead)
+# Use lookup from law.cfg
 analysis_multilepton.x.versions = {}
 
-# files of bash sandboxes that might be required by remote tasks
-# (used in cf.HTCondorWorkflow)
+# Bash sandboxes required by remote tasks
 analysis_multilepton.x.bash_sandboxes = [
     "$CF_BASE/sandboxes/cf.sh",
     "$CF_BASE/sandboxes/venv_columnar.sh",
     "$MULTILEPTON_BASE/sandboxes/venv_columnar_tf.sh",
 ]
 
-# files of cmssw sandboxes that might be required by remote tasks
-# (used in cf.HTCondorWorkflow)
+# CMSSW sandboxes (optional)
 analysis_multilepton.x.cmssw_sandboxes = [
-# "$CF_BASE/sandboxes/cmssw_default.sh",
+    # "$CF_BASE/sandboxes/cmssw_default.sh",
 ]
 
-#=======================================
-# analysis-wide groups and defaults
-#=======================================
-# config groups for conveniently looping over certain configs
-# (used in wrapper_factory)
+# =======================================
+# Analysis-wide Groups and Defaults
+# =======================================
 analysis_multilepton.x.config_groups = {}
-
-# named function hooks that can modify store_parts of task outputs if needed
 analysis_multilepton.x.store_parts_modifiers = {}
 
-#=======================================
-# hist hooks
-#=======================================
+# =======================================
+# Histogram Hooks
+# =======================================
 analysis_multilepton.x.hist_hooks = DotDict()
 add_blinding_hooks(analysis_multilepton)
 add_qcd_hooks(analysis_multilepton)
 add_binning_hooks(analysis_multilepton)
 
-
+# =======================================
+# Lazy Config Factory Helper
+# =======================================
 def add_lazy_config(
     *,
     campaign_module: str,
@@ -70,21 +62,17 @@ def add_lazy_config(
     config_id: int,
     add_limited: bool = True,
     **kwargs,
-):
+) -> None:
+    """Register a lazily-created configuration into the multilepton analysis."""
+
     def create_factory(
         config_id: int,
         config_name_postfix: str = "",
         limit_dataset_files: int | None = None,
     ):
         def factory(configs: od.UniqueObjectIndex):
-            # import the campaign
             mod = importlib.import_module(campaign_module)
             campaign = getattr(mod, campaign_attr)
-            
-            # use the task parameter if available
-            #current_task = MultileptonTask.get_current_task()
-            #if current_task and current_task.limit_dataset_files != -1:
-            #    limit_dataset_files = current_task.limit_dataset_files
             return add_config(
                 analysis_multilepton,
                 campaign.copy(),
@@ -95,87 +83,43 @@ def add_lazy_config(
             )
         return factory
 
+    # Add full configuration
     analysis_multilepton.configs.add_lazy_factory(config_name, create_factory(config_id))
+
+    # Optionally add a "_limited" version
     if add_limited:
-        analysis_multilepton.configs.add_lazy_factory(f"{config_name}_limited", 
-                create_factory(config_id + 200, "_limited", 1))
+        limited_name = f"{config_name}_limited"
+        if limited_name in analysis_multilepton.configs:
+            raise ValueError(f"Duplicate config name detected: {limited_name}")
+        analysis_multilepton.configs.add_lazy_factory(
+            limited_name,
+            create_factory(config_id + 200, "_limited", 1),
+        )
 
-#=======================================
-# Priavte uhh NanoAOD datasets configs
-#=======================================
-# 2022, preEE, v14
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2022_preEE_nano_uhh_v14",
-    campaign_attr="campaign_run3_2022_preEE_nano_uhh_v14",
-    config_name="22preEE_v14_private",
-    config_id=5014,
-    add_limited=False,
-)
-# 2022, postEE, v14
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2022_postEE_nano_uhh_v14",
-    campaign_attr="campaign_run3_2022_postEE_nano_uhh_v14",
-    config_name="22postEE_v14_private",
-    config_id=6014,
-    add_limited=False,
-)
-# 2022, preEE, v14
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2022_preEE_nano_uhh_v14",
-    campaign_attr="campaign_run3_2022_preEE_nano_uhh_v14",
-    config_name="22preEE_v14_private",
-    config_id=5114,
-    add_limited=False,
-)
-# 2023, preBPix, v14
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2023_preBPix_nano_uhh_v14",
-    campaign_attr="campaign_run3_2023_preBPix_nano_uhh_v14",
-    config_name="23preBPix_v14_private",
-    config_id=7014,
-    add_limited=False,
-)
-# 2023, postBPix, v14
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2023_postBPix_nano_uhh_v14",
-    campaign_attr="campaign_run3_2023_postBPix_nano_uhh_v14",
-    config_name="23postBPix_v14_private",
-    config_id=8014,
-    add_limited=False,
-)
 
-#=======================================
-# Central NanoAOD datasets configs
-#=======================================
-# 2022, preEE, v12
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2022_preEE_nano_v12",
-    campaign_attr="campaign_run3_2022_preEE_nano_v12",
-    config_name="22preEE_v12_central",
-    config_id=5012,
-    add_limited=False,
-)
-# 2022, postEE, v12
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2022_postEE_nano_v12",
-    campaign_attr="campaign_run3_2022_postEE_nano_v12",
-    config_name="22postEE_v12_central",
-    config_id=6012,
-    add_limited=False,
-)
-# 2023, preBPix, v12
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2023_preBPix_nano_v12",
-    campaign_attr="campaign_run3_2023_preBPix_nano_v12",
-    config_name="23preBPix_v12_central",
-    config_id=7012,
-    add_limited=False,
-)
-# 2023, postBPix, v12
-add_lazy_config(
-    campaign_module="cmsdb.campaigns.run3_2023_postBPix_nano_v12",
-    campaign_attr="campaign_run3_2023_postBPix_nano_v12",
-    config_name="23postBPix_v12_central",
-    config_id=8012,
-    add_limited=False,
-)
+# =======================================
+# Dataset Configurations
+# =======================================
+datasets = [
+    # --- Private UHH NanoAOD datasets ---
+    ("cmsdb.campaigns.run3_2022_preEE_nano_uhh_v14", "campaign_run3_2022_preEE_nano_uhh_v14", "22preEE_v14_private", 5014),
+    ("cmsdb.campaigns.run3_2022_postEE_nano_uhh_v14", "campaign_run3_2022_postEE_nano_uhh_v14", "22postEE_v14_private", 6014),
+    ("cmsdb.campaigns.run3_2023_preBPix_nano_uhh_v14", "campaign_run3_2023_preBPix_nano_uhh_v14", "23preBPix_v14_private", 7014),
+    ("cmsdb.campaigns.run3_2023_postBPix_nano_uhh_v14", "campaign_run3_2023_postBPix_nano_uhh_v14", "23postBPix_v14_private", 8014),
+
+    # --- Central NanoAOD datasets ---
+    ("cmsdb.campaigns.run3_2022_preEE_nano_v12", "campaign_run3_2022_preEE_nano_v12", "22preEE_v12_central", 5012),
+    ("cmsdb.campaigns.run3_2022_postEE_nano_v12", "campaign_run3_2022_postEE_nano_v12", "22postEE_v12_central", 6012),
+    ("cmsdb.campaigns.run3_2023_preBPix_nano_v12", "campaign_run3_2023_preBPix_nano_v12", "23preBPix_v12_central", 7012),
+    ("cmsdb.campaigns.run3_2023_postBPix_nano_v12", "campaign_run3_2023_postBPix_nano_v12", "23postBPix_v12_central", 8012),
+    ("cmsdb.campaigns.run3_2024_nano_v15", "campaign_run3_2024_nano_v15", "24_v15_central", 8012),
+]
+
+for module, attr, name, cid in datasets:
+    add_lazy_config(
+        campaign_module=module,
+        campaign_attr=attr,
+        config_name=name,
+        config_id=cid,
+        add_limited=False,
+    )

@@ -67,6 +67,7 @@ class AnalysisConfig:
                 (2022, "EE"): "2022EE", 
                 (2023, ""): "2023",
                 (2023, "BPix"): "2023BPix",
+                (2024, ""): "2024",
             }
             return era_map.get((year, postfix), str(year))
     
@@ -158,7 +159,7 @@ def bTagWorkingPoints(year, run, campaign):
         eras = ["2016APV", "2016", "2017", "2018"]
     elif run == 3:
         taggers = ["deepJet", "particleNet", "robustParticleTransformer", "particleNetMD"]
-        eras = ["2022", "2022EE", "2023", "2023BPix"]
+        eras = ["2022", "2022EE", "2023", "2023BPix", "2024"]
     else:
         raise ValueError(f"Unsupported run: {run}")
 
@@ -222,7 +223,7 @@ def add_config(
     if run not in {2, 3}:
         raise ValueError(f"Invalid run: {run}. Expected 2 or 3.")
     
-    valid_years = {2016, 2017, 2018, 2022, 2023, 2024, 2025}
+    valid_years = {2016, 2017, 2018, 2022, 2023, 2024}# , 2025} not yet
     if year not in valid_years:
         raise ValueError(f"Invalid year: {year}. Must be one of {sorted(valid_years)}.")
     
@@ -290,6 +291,7 @@ def add_config(
                 "2022": "Re-recoBCD",
                 "2023BPix": "PromptD",
                 "2023": "PromptC"
+                "2024": "PromptC"
                 }
         e_postfix = EGMcorrection.get(f"{year}{campaign.x.postfix}")
         e_prefix = 'UL-' if run == 2 else ''
@@ -324,6 +326,7 @@ def add_config(
         cfg.x.cross_trigger_electron_mc_effs_cfg = make_el_trigger_cfg("McEff", hlt_cross)
 
         # --- Electron Energy Corrections (EEC/EER) ----------------------------------------------
+        e_tag = ""
         if year == 2022:
             e_tag = {"": "preEE", "EE": "postEE"}[campaign.x.postfix]
         elif year == 2023:
@@ -422,12 +425,17 @@ def add_config(
                 (2022, "EE"): "_22Sep2023",
                 (2023, ""): "Prompt23",
                 (2023, "BPix"): "Prompt23",
+                # For the time being, use the Summer23BPix JERs for 2024 data. 
+                # The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples 
+                # will be announced soon (expected by the end of October 2025).
+                (2024, "BPix"): "Prompt23",
             }.get((year, campaign.x.postfix))
             jec_version_map = {
                 (2022, ""): "V2",
                 (2022, "EE"): "V2",
                 (2023, ""): "V2",
                 (2023, "BPix"): "V3",
+                (2024, ""): "V1",
             }
             if not jerc_postfix:
                 raise ValueError(f"Unsupported JERC configuration for Run 3: year={year}, postfix={campaign.x.postfix}")
@@ -440,7 +448,7 @@ def add_config(
                 "jec_campaign": jec_campaign,
                 "jec_version": jec_version_map[(year, campaign.x.postfix)],
                 "jer_campaign": jer_campaign,
-                "jer_version": "JR" + {2022: "V1", 2023: "V1"}[year],
+                "jer_version": "JR" + {2022: "V1", 2023: "V1", 2024: "V1"}[year],
                 "jet_type": "AK4PFPuppi",
                 "data_per_era": year == 2022,  # 2022 JEC depends on era
             }
@@ -870,7 +878,7 @@ def add_config(
     if run == 2:
         tauPOGJsonFile = "tau.json.gz"
         metPOGJsonFile = "met.json.gz"
-    elif run == 3: # nasty names, workaround 
+    elif run == 3 and year != 2024: # nasty names, workaround, also missing corrections for 2024 still
         if year == 2022:
             met_pog_suffix = f"{year}_{year}{'' if campaign.has_tag('preEE') else 'EE'}"
             tau_pog_suffix = f"{'pre' if campaign.has_tag('preEE') else 'post'}EE"
@@ -887,20 +895,22 @@ def add_config(
                     raise ValueError(f"Multiple campaign tags found: {cfg.x.campaign_tag} and {tag}")
                 campaign_tag = tag
 
+    ver = '_v1' if year == 2024 else ''
     # common files
     # (versions in the end are for hashing in cases where file contents changed but paths did not)
     goldenFile = analysis_data['years'][year]["certified_lumi_file"]
     normtagFile = analysis_data['years'][year]["normtag"]
 
     add_external("lumi", {"golden":(goldenFile, "v1"), "normtag": (normtagFile, "v1")})
-    add_external("pu_sf", (localizePOGSF(year, "LUM", "puWeights.json.gz"), "v1"))
     add_external("jet_jerc", (localizePOGSF(year, "JME", "jet_jerc.json.gz"), "v1"))
     add_external("jet_veto_map", (localizePOGSF(year, "JME", "jetvetomaps.json.gz"), "v1"))
-    add_external("met_phi_corr", (localizePOGSF(year, "JME", f"{metPOGJsonFile}"), "v1"))
     add_external("btag_sf_corr", (localizePOGSF(year, "BTV", "btagging.json.gz"), "v1"))
     add_external("muon_sf", (localizePOGSF(year, "MUO", "muon_Z.json.gz"), "v1"))
-    add_external("electron_sf", (localizePOGSF(year, "EGM", "electron.json.gz"), "v1"))
-    add_external("tau_sf", (localizePOGSF(year, "TAU", f"{tauPOGJsonFile}"), "v1"))
+    add_external("electron_sf", (localizePOGSF(year, "EGM", f"electron{ver}.json.gz"), "v1"))
+    if year != 2024: # still missing 
+        add_external("tau_sf", (localizePOGSF(year, "TAU", f"{tauPOGJsonFile}"), "v1"))
+        add_external("pu_sf", (localizePOGSF(year, "LUM", "puWeights.json.gz"), "v1"))
+        add_external("met_phi_corr", (localizePOGSF(year, "JME", f"{metPOGJsonFile}"), "v1"))
 
     # run specific files
     if run == 2:
@@ -911,9 +921,10 @@ def add_config(
             subpaths=DotDict(even="hh-btag-master/models/HHbtag_v2_par_0", odd="hh-btag-master/models/HHbtag_v2_par_1"),  # noqa: E501
             version="v2",
         ))
+    
     elif run == 3:
         # electron energy correction and smearing
-        add_external("electron_ss", (localizePOGSF(year, "EGM", "electronSS_EtDependent.json.gz"), "v1"))
+        add_external("electron_ss", (localizePOGSF(year, "EGM", f"electronSS_EtDependent{ver}.json.gz"), "v1"))
         # updated jet id
         add_external("jet_id", (localizePOGSF(year, "JME", "jetid.json.gz"), "v1"))
         # hh-btag repository with TF saved model directories trained on 22+23 samples using pnet
