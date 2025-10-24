@@ -232,9 +232,9 @@ def hhbtag_setup(
         self.config_inst.channels.n.ce3tau.id: 0,
         self.config_inst.channels.n.cmu3tau.id: 0,
         self.config_inst.channels.n.c4tau.id: 0,
-        self.config_inst.channels.n.c2ess.id: 0,
-        self.config_inst.channels.n.cemuss.id: 0,
-        self.config_inst.channels.n.c2muss.id: 0,
+        self.config_inst.channels.n.c2e0or1tau.id: 0,
+        self.config_inst.channels.n.cemu0or1tau.id: 0,
+        self.config_inst.channels.n.c2mu0or1tau.id: 0,
     }
 
     # convert

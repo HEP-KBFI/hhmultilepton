@@ -48,9 +48,12 @@ def add_categories(config: od.Config) -> None:
     _add_category(config, name="ce3tau", id=30, selection="cat_ce3tau", label=config.channels.n.ce3tau.label)
     _add_category(config, name="cmu3tau", id=31, selection="cat_cmu3tau", label=config.channels.n.cmu3tau.label)
     _add_category(config, name="c4tau", id=32, selection="cat_c4tau", label=config.channels.n.c4tau.label)
-    _add_category(config, name="c2ess", id=33, selection="cat_c2ess", label=config.channels.n.c2ess.label)
-    _add_category(config, name="cemuss", id=34, selection="cat_cemuss", label=config.channels.n.cemuss.label)
-    _add_category(config, name="c2muss", id=35, selection="cat_c2muss", label=config.channels.n.c2muss.label)
+    _add_category(config, name="c2e0or1tau", id=33, selection="cat_c2e0or1tau",
+        label=config.channels.n.c2e0or1tau.label)
+    _add_category(config, name="cemu0or1tau", id=34, selection="cat_cemu0or1tau",
+        label=config.channels.n.cemu0or1tau.label)
+    _add_category(config, name="c2mu0or1tau", id=35, selection="cat_c2mu0or1tau",
+        label=config.channels.n.c2mu0or1tau.label)
 
     # bveto
     _add_category(config, name="bveto_on", id=30001, selection="cat_bveto_on", label="bveto on")
@@ -58,6 +61,8 @@ def add_categories(config: od.Config) -> None:
 
     # Loose category for BDT trainning + tight + trigmatch
     _add_category(config, name="ceormu", id=10000, selection="cat_e_or_mu", label=r"e or $\mu$", tags={"ceormu"})
+    _add_category(config, name="ceormu_bveto", id=15000, selection="cat_e_or_mu_bveto",
+        label=r"e or $\mu$ bveto on", tags={"ceormu_bveto"})
     # tight/nontight
     _add_category(config, name="tight_bdt", id=11000, selection="cat_tight_bdt", label="tight", tags={"tight_bdt"})
     _add_category(config, name="nontight_bdt", id=12000,
@@ -96,8 +101,26 @@ def add_categories(config: od.Config) -> None:
 
     # multilepton
     # 3l/4l inclusive, later split into CR / SR via Z-peak
-    _add_category(config, name="cat3l0tau", id=1001, selection="cat_3l0tau", label="$3\ell 0\tau_h$")  # noqa: W605
-    _add_category(config, name="cat4l", id=1002, selection="cat_4l", label="$4\ell$")  # noqa: W605
+    _add_category(config, name="cat3l0tau_SR", id=1001, selection="cat_3l0tau_SR", label=r"$3\ell 0\tau_h$ SR")
+    _add_category(config, name="cat3l0tau_SB", id=1002, selection="cat_3l0tau_SB", label=r"$3\ell 0\tau_h$ SB")
+    _add_category(config, name="cat4l_SR", id=1003, selection="cat_4l_SR", label=r"$4\ell$ SR")
+    _add_category(config, name="cat4l_SB", id=1004, selection="cat_4l_SB", label=r"$4\ell$ SB")
+    _add_category(config, name="cat3l1tau_SR", id=1005, selection="cat_3l1tau_SR", label=r"$3\ell 1\tau_h$ SR")
+    _add_category(config, name="cat3l1tau_SB", id=1006, selection="cat_3l1tau_SB", label=r"$3\ell 1\tau_h$ SB")
+    _add_category(config, name="cat2l2tau_SR", id=1007, selection="cat_2l2tau_SR", label=r"$2\ell 2\tau_h$ SR")
+    _add_category(config, name="cat2l2tau_SB", id=1008, selection="cat_2l2tau_SB", label=r"$2\ell 2\tau_h$ SB")
+    _add_category(config, name="cat1l3tau_SR", id=1009, selection="cat_1l3tau_SR", label=r"$1\ell 3\tau_h$ SR")
+    _add_category(config, name="cat1l3tau_SB", id=1010, selection="cat_1l3tau_SB", label=r"$1\ell 3\tau_h$ SB")
+    _add_category(config, name="cat4tau_SR", id=1011, selection="cat_4tau_SR", label=r"$4\tau_h$ SR")
+    _add_category(config, name="cat4tau_SB", id=1012, selection="cat_4tau_SB", label=r"$4\tau_h$ SB")
+    _add_category(config, name="cat2l0or1tau_SR_SS", id=1013, selection="cat_2l0or1tau_SR_SS",
+        label=r"$2\ell\  \leq 1\,\tau_{h}$ SR, SS")
+    _add_category(config, name="cat2l0or1tau_SR_OS", id=1014, selection="cat_2l0or1tau_SR_OS",
+        label=r"$2\ell\  \leq 1\,\tau_{h}$ SR, OS")
+    _add_category(config, name="cat2l0or1tau_SB_SS", id=1015, selection="cat_2l0or1tau_SB_SS",
+        label=r"$2\ell\  \leq 1\,\tau_{h}$ SB, SS")
+    _add_category(config, name="cat2l0or1tau_SB_OS", id=1016, selection="cat_2l0or1tau_SB_OS",
+        label=r"$2\ell\  \leq 1\,\tau_{h}$ SB, OS")
 
     #
     # build groups
@@ -132,83 +155,82 @@ def add_categories(config: od.Config) -> None:
         }
 
     # main analysis categories
-    main_categories = {
+    # main_categories = {
         # channels first
-        "channel": CategoryGroup(["etau", "mutau", "tautau"], is_complete=False, has_overlap=False),
+        # "channel": CategoryGroup(["etau", "mutau", "tautau"], is_complete=False, has_overlap=False),
         # kinematic regions in the middle (to be extended)
-        "kin": CategoryGroup(["incl", "2j", "res1b", "res2b", "boosted"], is_complete=True, has_overlap=True),
+        # "kin": CategoryGroup(["incl", "2j", "res1b", "res2b", "boosted"], is_complete=True, has_overlap=True),
         # qcd regions last
-        "sign": CategoryGroup(["os", "ss"], is_complete=True, has_overlap=False),
-        "tau2": CategoryGroup(["iso", "noniso"], is_complete=True, has_overlap=False),
-    }
+        # "sign": CategoryGroup(["os", "ss"], is_complete=True, has_overlap=False),
+        # "tau2": CategoryGroup(["iso", "noniso"], is_complete=True, has_overlap=False),
+    # }
 
-    create_category_combinations(
-        config=config,
-        categories=main_categories,
-        name_fn=name_fn,
-        kwargs_fn=functools.partial(kwargs_fn, add_qcd_group=True),
-    )
+    # create_category_combinations(
+        # config=config,
+        # categories=main_categories,
+        # name_fn=name_fn,
+        # kwargs_fn=functools.partial(kwargs_fn, add_qcd_group=True),
+    # )
 
     # Creating category combinations
-    categories_sig_sideband = {
-        "channel": CategoryGroup(["c3e", "c3mu", "c2emu", "ce2mu", "c4e", "c4mu", "c2e2mu",
-            "c3emu", "ce3mu", "c3etau", "c2e2tau", "ce3tau", "c2mu2tau", "cmu3tau", "c3mutau", "c2emutau",
-            "ce2mutau", "cemu2tau", "c4tau", "c2ess", "cemuss", "c2muss"],
-        is_complete=True, has_overlap=False),
-        "sel": CategoryGroup(["tight", "nontight"], is_complete=False, has_overlap=False),
-        "trig": CategoryGroup(["trigmatch", "nontrigmatch"], is_complete=True, has_overlap=False),
-        "vetobtag": CategoryGroup(["bveto_on", "bveto_off"], is_complete=True, has_overlap=False),
-        "sign": CategoryGroup(["os", "ss"], is_complete=True, has_overlap=False),
-    }
+    # categories_sig_sideband = {
+        # "channel": CategoryGroup(["c3e", "c3mu", "c2emu", "ce2mu", "c4e", "c4mu", "c2e2mu",
+            # "c3emu", "ce3mu", "c3etau", "c2e2tau", "ce3tau", "c2mu2tau", "cmu3tau", "c3mutau", "c2emutau",
+            # "ce2mutau", "cemu2tau", "c4tau", "c2e0or1tau", "cemu0or1tau", "c2mu0or1tau"],
+        # is_complete=True, has_overlap=False),
+        # "sel": CategoryGroup(["tight", "nontight"], is_complete=True, has_overlap=False),
+        # "trig": CategoryGroup(["trigmatch", "nontrigmatch"], is_complete=True, has_overlap=False),
+        # "vetobtag": CategoryGroup(["bveto_on", "bveto_off"], is_complete=True, has_overlap=False),
+        # "sign": CategoryGroup(["os", "ss"], is_complete=True, has_overlap=False),
+    # }
 
-    create_category_combinations(
-        config=config,
-        categories=categories_sig_sideband,
-        name_fn=name_fn,
-        kwargs_fn=functools.partial(kwargs_fn, add_qcd_group=False),
-    )
+    # create_category_combinations(
+        # config=config,
+        # categories=categories_sig_sideband,
+        # name_fn=name_fn,
+        # kwargs_fn=functools.partial(kwargs_fn, add_qcd_group=False),
+    # )
 
-    bdt_categories = {
-        "loose_ch": CategoryGroup(["ceormu"], is_complete=False, has_overlap=False),
-        "sel": CategoryGroup(["tight_bdt", "nontight_bdt"], is_complete=False, has_overlap=False),
-        "trig": CategoryGroup(["trigmatch_bdt", "nontrigmatch_bdt"], is_complete=True, has_overlap=False),
-        "vetobtag": CategoryGroup(["bveto_on", "bveto_off"], is_complete=True, has_overlap=False),
-    }
+    # bdt_categories = {
+        # "loose_ch": CategoryGroup(["ceormu"], is_complete=False, has_overlap=False),
+        # "sel": CategoryGroup(["tight_bdt", "nontight_bdt"], is_complete=True, has_overlap=False),
+        # "trig": CategoryGroup(["trigmatch_bdt", "nontrigmatch_bdt"], is_complete=True, has_overlap=False),
+    # }
 
-    create_category_combinations(
-        config=config,
-        categories=bdt_categories,
-        name_fn=name_fn,
-        kwargs_fn=functools.partial(kwargs_fn, add_qcd_group=False),
-    )
+    # create_category_combinations(
+        # config=config,
+        # categories=bdt_categories,
+        # name_fn=name_fn,
+        # kwargs_fn=functools.partial(kwargs_fn, add_qcd_group=False),
+    # )
 
     # control categories
-    control_categories = {
+    # control_categories = {
         # channels first
-        "channel": CategoryGroup(["ee", "mumu", "emu"], is_complete=False, has_overlap=False),
+        # "channel": CategoryGroup(["ee", "mumu", "emu"], is_complete=False, has_overlap=False),
         # kinematic regions in the middle (to be extended)
-        "kin": CategoryGroup(["incl", "dy", "tt"], is_complete=True, has_overlap=True),
+        # "kin": CategoryGroup(["incl", "dy", "tt"], is_complete=True, has_overlap=True),
         # relative sign last
-        "sign": CategoryGroup(["os"], is_complete=False, has_overlap=False),
-    }
+        # "sign": CategoryGroup(["os"], is_complete=False, has_overlap=False),
+    # }
 
-    def skip_fn_ctrl(categories: dict[str, od.Category]) -> bool:
-        if "channel" not in categories or "kin" not in categories:
-            return False
-        ch_cat = categories["channel"]
-        kin_cat = categories["kin"]
+    # def skip_fn_ctrl(categories: dict[str, od.Category]) -> bool:
+        # if "channel" not in categories or "kin" not in categories:
+            # return False
+        # ch_cat = categories["channel"]
+        # kin_cat = categories["kin"]
         # skip dy in emu
-        if kin_cat.name == "dy" and ch_cat.name == "emu":
-            return True
+        # if kin_cat.name == "dy" and ch_cat.name == "emu":
+            # return True
         # skip tt in ee/mumu
-        if kin_cat.name == "tt" and ch_cat.name in ("ee", "mumu"):
-            return True
-        return False
+        # if kin_cat.name == "tt" and ch_cat.name in ("ee", "mumu"):
+            # return True
+        # return False
 
-    create_category_combinations(
-        config=config,
-        categories=control_categories,
-        name_fn=name_fn,
-        kwargs_fn=functools.partial(kwargs_fn, add_qcd_group=False),
-        skip_fn=skip_fn_ctrl,
-    )
+    # create_category_combinations(
+        # config=config,
+        # categories=control_categories,
+        # name_fn=name_fn,
+        # kwargs_fn=functools.partial(kwargs_fn, add_qcd_group=False),
+        # skip_fn=skip_fn_ctrl,
+    # )

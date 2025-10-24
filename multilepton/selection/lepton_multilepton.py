@@ -582,6 +582,7 @@ def tau_trigger_matching(
         # new columns
         "channel_id", "leptons_os", "tau2_isolated", "single_triggered", "cross_triggered",
         "matched_trigger_ids", "tight_sel", "trig_match", "tight_sel_bdt", "trig_match_bdt", "ok_bdt_eormu",
+        "ok_bdt_eormu_bveto",
     },
 )
 def lepton_selection(
@@ -631,9 +632,9 @@ def lepton_selection(
     # new 4tau channel
     ch_4tau = self.config_inst.get_channel("c4tau")
     # new 2lss channels
-    ch_2ess = self.config_inst.get_channel("c2ess")
-    ch_emuss = self.config_inst.get_channel("cemuss")
-    ch_2muss = self.config_inst.get_channel("c2muss")
+    ch_2e0or1tau = self.config_inst.get_channel("c2e0or1tau")
+    ch_emu0or1tau = self.config_inst.get_channel("cemu0or1tau")
+    ch_2mu0or1tau = self.config_inst.get_channel("c2mu0or1tau")
 
     CHANNELS = {
         "3e": {"id": ch_3e.id},
@@ -655,9 +656,9 @@ def lepton_selection(
         "e3tau": {"id": ch_e3tau.id},
         "mu3tau": {"id": ch_mu3tau.id},
         "4tau": {"id": ch_4tau.id},
-        "2ess": {"id": ch_2ess.id},
-        "emuss": {"id": ch_emuss.id},
-        "2muss": {"id": ch_2muss.id},
+        "2e0or1tau": {"id": ch_2e0or1tau.id},
+        "emu0or1tau": {"id": ch_emu0or1tau.id},
+        "2mu0or1tau": {"id": ch_2mu0or1tau.id},
         "eormu": {"id": "eormu"},
     }
 
@@ -665,6 +666,7 @@ def lepton_selection(
     false_mask = (abs(events.event) < 0)
     channel_id = np.uint32(1) * false_mask
     ok_bdt_eormu = false_mask
+    ok_bdt_eormu_bveto = false_mask
     tau2_isolated = false_mask
     leptons_os = false_mask
     single_triggered = false_mask
@@ -807,22 +809,22 @@ def lepton_selection(
 
         if ch_key not in {"eormu", "3e", "3mu", "2emu", "e2mu", "4e", "4mu", "3emu", "2e2mu", "e3mu",
                           "3etau", "2e2tau", "e3tau", "2mu2tau", "mu3tau", "3mutau", "2emutau",
-                          "e2mutau", "emu2tau", "4tau", "2ess", "emuss", "2muss"}:
+                          "e2mutau", "emu2tau", "4tau", "2e0or1tau", "emu0or1tau", "2mu0or1tau"}:
             continue
 
-        if ch_key in {"3e", "4e", "2ess"}:
+        if ch_key in {"3e", "4e", "2e0or1tau"}:
             if self.dataset_inst.is_mc or self.dataset_inst.has_tag("ee"):
                 trig_ids = single_e_tids
             else:
                 continue
 
-        elif ch_key in {"3mu", "4mu", "2muss"}:
+        elif ch_key in {"3mu", "4mu", "2mu0or1tau"}:
             if self.dataset_inst.is_mc or self.dataset_inst.has_tag("mumu"):
                 trig_ids = single_mu_tids
             else:
                 continue
 
-        elif ch_key in {"2emu", "e2mu", "2e2mu", "3emu", "e3mu", "emuss", "eormu"}:
+        elif ch_key in {"2emu", "e2mu", "2e2mu", "3emu", "e3mu", "emu0or1tau", "eormu"}:
             if self.dataset_inst.has_tag("emu_from_e"):
                 trig_ids = single_e_tids
             elif self.dataset_inst.has_tag("emu_from_mu"):
@@ -935,6 +937,7 @@ def lepton_selection(
 
                 base_ok = e_base | mu_base
                 ok_bdt_eormu = ok_bdt_eormu | base_ok
+                ok_bdt_eormu_bveto = ok_bdt_eormu
 
                 sel_electron_mask = sel_electron_mask | (e_base & e_ctrl_bdt)
                 sel_looseelectron_mask = sel_looseelectron_mask | (e_base & e_veto_bdt)
@@ -975,8 +978,8 @@ def lepton_selection(
                 sel_tightelectron_mask = sel_tightelectron_mask | (ok & e_mask)
 
                 e_charge = events.Electron.charge[e_ctrl]
-                e_three_not_same_sign = (np.abs(ak.sum(e_charge, axis=1)) == 1)
-                leptons_os = ak.where(ok, e_three_not_same_sign, leptons_os)
+                chargeok = (np.abs(ak.sum(e_charge, axis=1)) == 1)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & (ak.sum(e_mask, axis=1) == 3)
                 tight_sel = tight_sel | tight_ok
@@ -1003,8 +1006,8 @@ def lepton_selection(
                 sel_tightmuon_mask = sel_tightmuon_mask | (ok & mu_mask)
 
                 mu_charge = events.Muon.charge[mu_ctrl]
-                mu_three_not_same_sign = (np.abs(ak.sum(mu_charge, axis=1)) == 1)
-                leptons_os = ak.where(ok, mu_three_not_same_sign, leptons_os)
+                chargeok = (np.abs(ak.sum(mu_charge, axis=1)) == 1)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & (ak.sum(mu_mask, axis=1) == 3)
                 tight_sel = tight_sel | tight_ok
@@ -1035,8 +1038,8 @@ def lepton_selection(
 
                 e_charge = events.Electron.charge[e_ctrl]
                 mu_charge = events.Muon.charge[mu_ctrl]
-                eemu_three_not_same_sign = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 1)
-                leptons_os = ak.where(ok, eemu_three_not_same_sign, leptons_os)
+                chargeok = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 1)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum(e_mask, axis=1) == 2) & (ak.sum(mu_mask, axis=1) == 1))
                 tight_sel = tight_sel | tight_ok
@@ -1077,8 +1080,8 @@ def lepton_selection(
 
                 e_charge = events.Electron.charge[e_ctrl]
                 mu_charge = events.Muon.charge[mu_ctrl]
-                emumu_three_not_same_sign = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 1)
-                leptons_os = ak.where(ok, emumu_three_not_same_sign, leptons_os)
+                chargeok = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 1)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum(e_mask, axis=1) == 1) & (ak.sum(mu_mask, axis=1) == 2))
                 tight_sel = tight_sel | tight_ok
@@ -1115,8 +1118,8 @@ def lepton_selection(
                 sel_tightelectron_mask = sel_tightelectron_mask | (ok & e_mask)
 
                 e_charge = events.Electron.charge[e_ctrl]
-                e_net_zero = (np.abs(ak.sum(e_charge, axis=1)) == 0)
-                leptons_os = ak.where(ok, e_net_zero, leptons_os)
+                chargeok = (np.abs(ak.sum(e_charge, axis=1)) == 0)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & (ak.sum(e_mask, axis=1) == 4)
                 tight_sel = tight_sel | tight_ok
@@ -1143,8 +1146,8 @@ def lepton_selection(
                 sel_tightmuon_mask = sel_tightmuon_mask | (ok & mu_mask)
 
                 mu_charge = events.Muon.charge[mu_ctrl]
-                mu_net_zero = (np.abs(ak.sum(mu_charge, axis=1)) == 0)
-                leptons_os = ak.where(ok, mu_net_zero, leptons_os)
+                chargeok = (np.abs(ak.sum(mu_charge, axis=1)) == 0)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & (ak.sum(mu_mask, axis=1) == 4)
                 tight_sel = tight_sel | tight_ok
@@ -1175,8 +1178,8 @@ def lepton_selection(
 
                 e_charge = events.Electron.charge[e_ctrl]
                 mu_charge = events.Muon.charge[mu_ctrl]
-                eeemu_three_not_same_sign = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, eeemu_three_not_same_sign, leptons_os)
+                chargeok = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 0)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum(e_mask, axis=1) == 3) & (ak.sum(mu_mask, axis=1) == 1))
                 tight_sel = tight_sel | tight_ok
@@ -1217,8 +1220,8 @@ def lepton_selection(
 
                 e_charge = events.Electron.charge[e_ctrl]
                 mu_charge = events.Muon.charge[mu_ctrl]
-                eemumu_three_not_same_sign = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, eemumu_three_not_same_sign, leptons_os)
+                chargeok = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 0)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum(e_mask, axis=1) == 2) & (ak.sum(mu_mask, axis=1) == 2))
                 tight_sel = tight_sel | tight_ok
@@ -1259,8 +1262,8 @@ def lepton_selection(
 
                 e_charge = events.Electron.charge[e_ctrl]
                 mu_charge = events.Muon.charge[mu_ctrl]
-                emumumu_three_not_same_sign = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, emumumu_three_not_same_sign, leptons_os)
+                chargeok = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 0)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum(e_mask, axis=1) == 1) & (ak.sum(mu_mask, axis=1) == 3))
                 tight_sel = tight_sel | tight_ok
@@ -1307,8 +1310,9 @@ def lepton_selection(
 
                 e_charge = events.Electron.charge[e_ctrl]
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                eeetau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1)) + (ak.sum(e_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, eeetau_three_not_same_sign, leptons_os)
+                chargeok = ((np.abs((ak.sum(tau_charge, axis=1)) +
+                    (ak.sum(e_charge, axis=1))) == 0) & (np.abs(ak.sum(e_charge, axis=1)) == 1))
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 1) & (ak.sum(e_mask, axis=1) == 3))
                 tight_sel = tight_sel | tight_ok
@@ -1352,8 +1356,9 @@ def lepton_selection(
 
                 e_charge = events.Electron.charge[e_ctrl]
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                eetautau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1)) + (ak.sum(e_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, eetautau_three_not_same_sign, leptons_os)
+                chargeok = ((np.abs((ak.sum(tau_charge, axis=1)) +
+                    (ak.sum(e_charge, axis=1))) == 0) & (np.abs(ak.sum(e_charge, axis=1)) == 0))
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 2) & (ak.sum(e_mask, axis=1) == 2))
                 tight_sel = tight_sel | tight_ok
@@ -1399,9 +1404,9 @@ def lepton_selection(
 
                 e_charge = events.Electron.charge[e_ctrl]
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                etautautau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1)) +
+                chargeok = (np.abs((ak.sum(tau_charge, axis=1)) +
                     (ak.sum(e_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, etautautau_three_not_same_sign, leptons_os)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 3) & (ak.sum(e_mask, axis=1) == 1))
                 tight_sel = tight_sel | tight_ok
@@ -1445,9 +1450,9 @@ def lepton_selection(
 
                 mu_charge = events.Muon.charge[mu_ctrl]
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                mumumutau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1)) +
-                    (ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, mumumutau_three_not_same_sign, leptons_os)
+                chargeok = ((np.abs((ak.sum(tau_charge, axis=1)) +
+                    (ak.sum(mu_charge, axis=1))) == 0) & (np.abs((ak.sum(mu_charge, axis=1))) == 1))
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 1) &
                     (ak.sum(mu_mask, axis=1) == 3))
@@ -1492,9 +1497,9 @@ def lepton_selection(
 
                 mu_charge = events.Muon.charge[mu_ctrl]
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                mumutautau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1)) +
-                    (ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, mumutautau_three_not_same_sign, leptons_os)
+                chargeok = ((np.abs((ak.sum(tau_charge, axis=1)) +
+                    (ak.sum(mu_charge, axis=1))) == 0) & (np.abs(ak.sum(mu_charge, axis=1)) == 0))
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 2) & (ak.sum(mu_mask, axis=1) == 2))
                 tight_sel = tight_sel | tight_ok
@@ -1540,9 +1545,9 @@ def lepton_selection(
 
                 mu_charge = events.Muon.charge[mu_ctrl]
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                mutautautau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1)) +
+                chargeok = (np.abs((ak.sum(tau_charge, axis=1)) +
                     (ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, mutautautau_three_not_same_sign, leptons_os)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 3) & (ak.sum(mu_mask, axis=1) == 1))
                 tight_sel = tight_sel | tight_ok
@@ -1591,9 +1596,10 @@ def lepton_selection(
                 e_charge = events.Electron.charge[e_ctrl]
                 mu_charge = events.Muon.charge[mu_ctrl]
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                eemutau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1)) +
-                    (ak.sum(e_charge, axis=1)) + (ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, eemutau_three_not_same_sign, leptons_os)
+                chargeok = ((np.abs((ak.sum(tau_charge, axis=1)) +
+                    (ak.sum(e_charge, axis=1)) + (ak.sum(mu_charge, axis=1))) == 0) &
+                    (np.abs((ak.sum(e_charge, axis=1)) + (ak.sum(mu_charge, axis=1))) == 1))
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 1) &
                     (ak.sum(e_mask, axis=1) == 2) & (ak.sum(mu_mask, axis=1) == 1))
@@ -1658,9 +1664,10 @@ def lepton_selection(
                 e_charge = events.Electron.charge[e_ctrl]
                 mu_charge = events.Muon.charge[mu_ctrl]
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                emumutau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1)) +
-                    (ak.sum(e_charge, axis=1)) + (ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, emumutau_three_not_same_sign, leptons_os)
+                chargeok = ((np.abs((ak.sum(tau_charge, axis=1)) +
+                    (ak.sum(e_charge, axis=1)) + (ak.sum(mu_charge, axis=1))) == 0) &
+                    (np.abs((ak.sum(e_charge, axis=1)) + (ak.sum(mu_charge, axis=1))) == 1))
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 1) &
                     (ak.sum(e_mask, axis=1) == 1) & (ak.sum(mu_mask, axis=1) == 2))
@@ -1725,9 +1732,10 @@ def lepton_selection(
                 e_charge = events.Electron.charge[e_ctrl]
                 mu_charge = events.Muon.charge[mu_ctrl]
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                eemutau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1)) +
-                    (ak.sum(e_charge, axis=1)) + (ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, eemutau_three_not_same_sign, leptons_os)
+                chargeok = ((np.abs((ak.sum(tau_charge, axis=1)) +
+                    (ak.sum(e_charge, axis=1)) + (ak.sum(mu_charge, axis=1))) == 0) &
+                    (np.abs((ak.sum(e_charge, axis=1)) + (ak.sum(mu_charge, axis=1))) == 0))
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 2) &
                     (ak.sum(e_mask, axis=1) == 1) & (ak.sum(mu_mask, axis=1) == 1))
@@ -1784,8 +1792,8 @@ def lepton_selection(
                 sel_isotau_mask = sel_isotau_mask | (ok & (ch_tau_mask & tau_iso_mask))
 
                 tau_charge = events.Tau.charge[ch_tau_mask]
-                tautautautau_three_not_same_sign = (np.abs((ak.sum(tau_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, tautautautau_three_not_same_sign, leptons_os)
+                chargeok = (np.abs((ak.sum(tau_charge, axis=1))) == 0)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & (ak.sum((ch_tau_mask & tau_iso_mask), axis=1) == 4)
                 tight_sel = tight_sel | tight_ok
@@ -1799,7 +1807,7 @@ def lepton_selection(
                 ids = ak.where(trig_match_ok, np.float32(tid), np.float32(np.nan))
                 matched_trigger_ids.append(ak.singletons(ak.nan_to_none(ids)))
 
-            elif ch_key == "2ess":
+            elif ch_key == "2e0or1tau":
 
                 ch_tau_mask = (
                     tau_mask &
@@ -1823,8 +1831,8 @@ def lepton_selection(
                 sel_isotau_mask = sel_isotau_mask | (ok & (ch_tau_mask & tau_iso_mask))
 
                 e_charge = events.Electron.charge[e_ctrl]
-                ee_os = (np.abs(ak.sum(e_charge, axis=1)) == 0)
-                leptons_os = ak.where(ok, ee_os, leptons_os)
+                chargeok = (np.abs(ak.sum(e_charge, axis=1)) == 0)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & (ak.sum(e_mask, axis=1) == 2)
                 tight_sel = tight_sel | tight_ok
@@ -1836,7 +1844,7 @@ def lepton_selection(
                 ids = ak.where(trig_match_ok, np.float32(tid), np.float32(np.nan))
                 matched_trigger_ids.append(ak.singletons(ak.nan_to_none(ids)))
 
-            elif ch_key == "2muss":
+            elif ch_key == "2mu0or1tau":
 
                 ch_tau_mask = (
                     tau_mask &
@@ -1860,8 +1868,8 @@ def lepton_selection(
                 sel_isotau_mask = sel_isotau_mask | (ok & (ch_tau_mask & tau_iso_mask))
 
                 mu_charge = events.Muon.charge[mu_ctrl]
-                mu_os = (np.abs(ak.sum(mu_charge, axis=1)) == 0)
-                leptons_os = ak.where(ok, mu_os, leptons_os)
+                chargeok = (np.abs(ak.sum(mu_charge, axis=1)) == 0)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & (ak.sum(mu_mask, axis=1) == 2)
                 tight_sel = tight_sel | tight_ok
@@ -1873,7 +1881,7 @@ def lepton_selection(
                 ids = ak.where(trig_match_ok, np.float32(tid), np.float32(np.nan))
                 matched_trigger_ids.append(ak.singletons(ak.nan_to_none(ids)))
 
-            elif ch_key == "emuss":
+            elif ch_key == "emu0or1tau":
 
                 ch_tau_mask = (
                     tau_mask &
@@ -1902,8 +1910,8 @@ def lepton_selection(
 
                 e_charge = events.Electron.charge[e_ctrl]
                 mu_charge = events.Muon.charge[mu_ctrl]
-                emu_os = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 0)
-                leptons_os = ak.where(ok, emu_os, leptons_os)
+                chargeok = (np.abs((ak.sum(e_charge, axis=1) + ak.sum(mu_charge, axis=1))) == 0)
+                leptons_os = ak.where(ok, chargeok, leptons_os)
 
                 tight_ok = ok & ((ak.sum(e_mask, axis=1) == 1) & (ak.sum(mu_mask, axis=1) == 1))
                 tight_sel = tight_sel | tight_ok
@@ -1939,6 +1947,7 @@ def lepton_selection(
     trig_match = ak.fill_none(trig_match, False)
     trig_match_bdt = ak.fill_none(trig_match_bdt, False)
     ok_bdt_eormu = ak.fill_none(ok_bdt_eormu, False)
+    ok_bdt_eormu_bveto = ak.fill_none(ok_bdt_eormu_bveto, False)
 
     # concatenate matched trigger ids
     empty_ids = ak.singletons(full_like(events.event, 0, dtype=np.int32), axis=0)[:, :0]
@@ -1956,6 +1965,7 @@ def lepton_selection(
 
     # new columns for lepton bdt
     events = set_ak_column(events, "ok_bdt_eormu", ok_bdt_eormu)
+    events = set_ak_column(events, "ok_bdt_eormu_bveto", ok_bdt_eormu_bveto)
     events = set_ak_column(events, "tight_sel_bdt", tight_sel_bdt)
     events = set_ak_column(events, "trig_match_bdt", trig_match_bdt)
 
@@ -1977,7 +1987,7 @@ def lepton_selection(
 
     return events, SelectionResult(
         steps={
-            "lepton": (channel_id != 0) | ok_bdt_eormu,
+            "lepton": (channel_id != 0) | ok_bdt_eormu | ok_bdt_eormu_bveto,
         },
         objects={
             "Electron": {

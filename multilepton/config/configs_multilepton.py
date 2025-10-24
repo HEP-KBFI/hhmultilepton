@@ -1698,8 +1698,13 @@ def add_config(
             "FatJet.*",
             "SubJet{1,2}.*",
             "Electron.*",
+            "ElectronLoose.*",
+            "ElectronTight.*",
             "Muon.*",
+            "MuonLoose.*",
+            "MuonTight.*",
             "Tau.*",
+            "TauIso.*",
             "GenPart*",
             f"{cfg.x.met_name}.{{pt,phi,significance,covXX,covXY,covYY}}",
             "PV.npvs",
@@ -1809,9 +1814,9 @@ def add_config(
     cfg.add_channel(name="ce3tau", id=30, label=r"$e\tau_{h}\tau_{h}\tau_{h}$")
     cfg.add_channel(name="cmu3tau", id=31, label=r"$\mu\tau_{h}\tau_{h}\tau_{h}$")
     cfg.add_channel(name="c4tau", id=32, label=r"$\tau_{h}\tau_{h}\tau_{h}\tau_{h}$")
-    cfg.add_channel(name="c2ess", id=33, label=r"$ee\  \leq 1\,\tau_{h}$")
-    cfg.add_channel(name="cemuss", id=34, label=r"$e\mu\ \leq 1\,\tau_{h}$")
-    cfg.add_channel(name="c2muss", id=35, label=r"$\mu\mu\ \leq 1\,\tau_{h}$")
+    cfg.add_channel(name="c2e0or1tau", id=33, label=r"$ee\  \leq 1\,\tau_{h}$")
+    cfg.add_channel(name="cemu0or1tau", id=34, label=r"$e\mu\ \leq 1\,\tau_{h}$")
+    cfg.add_channel(name="c2mu0or1tau", id=35, label=r"$\mu\mu\ \leq 1\,\tau_{h}$")
 
     # add categories
     from multilepton.config.categories import add_categories
@@ -1901,8 +1906,5 @@ def add_config(
             f"local_fs_{cfg.campaign.x.custom['name']}",
             f"wlcg_fs_{cfg.campaign.x.custom['name']}",
         ]
-        # print(cfg.get_category("ceormu__tight_bdt__trigmatch_bdt__bveto_on"), "???????????/")
-        # print(cfg.get_category("ceormu__tight_bdt__nontrigmatch_bdt__bveto_on"), "???????????/")
-        # print(cfg.get_category("ceormu__nontight_bdt__trigmatch_bdt__bveto_on"), "???????????/")
-        # print(cfg.get_category("ceormu__nontight_bdt__nontrigmatch_bdt__bveto_on"), "???????????/")
+
     return cfg
