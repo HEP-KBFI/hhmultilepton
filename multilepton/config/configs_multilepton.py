@@ -1019,7 +1019,7 @@ def add_config(
             met_pog_suffix = f"{year}_{year}{'' if campaign.has_tag('preEE') else 'EE'}"
             tau_pog_suffix = f"{'pre' if campaign.has_tag('preEE') else 'post'}EE"
         elif year == 2023:
-            met_pog_suffix = f"_{year}_{year}{'' if campaign.has_tag('preBPix') else 'BPix'}"
+            met_pog_suffix = f"{year}_{year}{'' if campaign.has_tag('preBPix') else 'BPix'}"
             tau_pog_suffix = f"{'pre' if campaign.has_tag('preBPix') else 'post'}BPix"
         tauPOGJsonFile = f"tau_DeepTau2018v2p5_{year}_{tau_pog_suffix}.json.gz"
         metPOGJsonFile = f"met_xyCorrections_{met_pog_suffix}.json.gz"
