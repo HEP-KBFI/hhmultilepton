@@ -161,7 +161,6 @@ main() {
     # run the actual setup
     if setup_multilepton "$@"; then
         multilepton_show_banner
-        multilepton_show_banner
         cf_color green "HH -> Multilepton analysis successfully setup"
         return "0"
     else

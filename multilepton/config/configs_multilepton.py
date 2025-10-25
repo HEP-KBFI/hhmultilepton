@@ -245,8 +245,8 @@ def add_config(
     
     # get all root processes
     all_processes_from_campaign = get_root_processes_from_campaign(campaign)
-    #for proc in all_processes_from_campaign:
-    #    print( proc)#, proc.name, proc.id) 
+    for proc in all_processes_from_campaign:
+        print( proc) #, proc.name, proc.id) 
     
     # create a config by passing the campaign
     cfg = od.Config(
@@ -441,10 +441,7 @@ def add_config(
                 (2022, "EE"): "_22Sep2023",
                 (2023, ""): "Prompt23",
                 (2023, "BPix"): "Prompt23",
-                # For the time being, use the Summer23BPix JERs for 2024 data. 
-                # The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples 
-                # will be announced soon (expected by the end of October 2025).
-                (2024, ""): "Prompt23",
+                (2024, ""): "Prompt24",
             }.get((year, campaign.x.postfix))
             jec_version_map = {
                 (2022, ""): "V2",
@@ -1023,6 +1020,7 @@ def add_config(
     if run == 2:
         tauPOGJsonFile = "tau.json.gz"
         metPOGJsonFile = "met.json.gz"
+
     elif run == 3: # nasty names, workaround, also missing corrections for 2024 still
         if year == 2022:
             met_pog_suffix = f"{year}_{year}{'' if campaign.has_tag('preEE') else 'EE'}"
@@ -1030,10 +1028,13 @@ def add_config(
         elif year == 2023:
             met_pog_suffix = f"{year}_{year}{'' if campaign.has_tag('preBPix') else 'BPix'}"
             tau_pog_suffix = f"{'pre' if campaign.has_tag('preBPix') else 'post'}BPix"
-        if year !=2024:
+        if year == 2024: # just for now FIXME 
+            tauPOGJsonFile = "tau.json.gz"
+            metPOGJsonFile = "met.json.gz"
+        else:
             tauPOGJsonFile = f"tau_DeepTau2018v2p5_{year}_{tau_pog_suffix}.json.gz"
             metPOGJsonFile = f"met_xyCorrections_{met_pog_suffix}.json.gz"
-        triggerFile = analysis_data["external_files"]["trigger"]
+       
         campaign_tag = ""
         for tag in ("preEE", "postEE", "preBPix", "postBPix"):
             if campaign.has_tag(tag, mode=any):
@@ -1046,6 +1047,7 @@ def add_config(
     # (versions in the end are for hashing in cases where file contents changed but paths did not)
     goldenFile = analysis_data['years'][year]["certified_lumi_file"]
     normtagFile = analysis_data['years'][year]["normtag"]
+    triggerFile = analysis_data["external_files"]["trigger"]
 
     add_external("lumi", {"golden":(goldenFile, "v1"), "normtag": (normtagFile, "v1")})
     add_external("jet_jerc", (localizePOGSF(year, "JME", "jet_jerc.json.gz"), "v1"))
@@ -1053,10 +1055,12 @@ def add_config(
     add_external("btag_sf_corr", (localizePOGSF(year, "BTV", "btagging.json.gz"), "v1"))
     add_external("muon_sf", (localizePOGSF(year, "MUO", "muon_Z.json.gz"), "v1"))
     add_external("electron_sf", (localizePOGSF(year, "EGM", f"electron{ver}.json.gz"), "v1"))
-    if year != 2024: # still missing 
-        add_external("tau_sf", (localizePOGSF(year, "TAU", f"{tauPOGJsonFile}"), "v1"))
-        add_external("pu_sf", (localizePOGSF(year, "LUM", "puWeights.json.gz"), "v1"))
-        add_external("met_phi_corr", (localizePOGSF(year, "JME", f"{metPOGJsonFile}"), "v1"))
+    
+    getfromyear = year
+    if year == 2024: getfromyear = 2018 # correction still missing for 2024 workaround with 2023 for now
+    add_external("tau_sf", (localizePOGSF(getfromyear, "TAU", f"{tauPOGJsonFile}"), "v1"))
+    add_external("pu_sf", (localizePOGSF(getfromyear, "LUM", "puWeights.json.gz"), "v1"))
+    add_external("met_phi_corr", (localizePOGSF(getfromyear, "JME", f"{metPOGJsonFile}"), "v1"))
 
     # run specific files
     if run == 2:
@@ -1064,7 +1068,6 @@ def add_config(
     elif run == 3:
         # electron energy correction and smearing
         add_external("electron_ss", (localizePOGSF(year, "EGM", f"electronSS_EtDependent{ver}.json.gz"), "v1"))
-        # updated jet id
         add_external("jet_id", (localizePOGSF(year, "JME", "jetid.json.gz"), "v1"))
         
     # FIXME to remove    
