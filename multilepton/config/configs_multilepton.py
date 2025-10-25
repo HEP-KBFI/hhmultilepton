@@ -592,11 +592,10 @@ def add_config(
 
     # Loop over signal and background
     for dtype in ['signal', 'background']:
-        print ( analysis_cfg.get_process_list(dtype) )
         for dataset_name in analysis_cfg.get_process_list(dtype):
             tags = []
             proc, id = convert_dataset_to_process(dataset_name, campaign, all_processes_from_campaign)
-            print( 'working on ....', dataset_name , proc, id, campaign.has_dataset(dataset_name))
+            #print( 'working on ....', dataset_name , proc, id, campaign.has_dataset(dataset_name))
             if id is None or not campaign.has_dataset(dataset_name):
                 continue
             dataset_names.append(dataset_name)
@@ -1231,6 +1230,6 @@ def add_config(
     add_met_filters(cfg)
     add_triggers(cfg)
     
-    for dataset in cfg.datasets:
-        print( dataset.name, 'yesssss')
+    #for dataset in cfg.datasets:
+    #    print( dataset.name)
     return cfg
