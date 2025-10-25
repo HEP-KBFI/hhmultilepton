@@ -234,7 +234,7 @@ def add_config(
     # gather campaign data
     run = campaign.x.run
     year = campaign.x.year
- 
+        
     # --- basic configuration validations ---
     if run not in {2, 3}:
         raise ValueError(f"Invalid run: {run}. Expected 2 or 3.")
@@ -444,7 +444,7 @@ def add_config(
                 # For the time being, use the Summer23BPix JERs for 2024 data. 
                 # The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples 
                 # will be announced soon (expected by the end of October 2025).
-                (2024, "BPix"): "Prompt23",
+                (2024, ""): "Prompt23",
             }.get((year, campaign.x.postfix))
             jec_version_map = {
                 (2022, ""): "V2",
@@ -572,7 +572,7 @@ def add_config(
     
     # get btag working points 
     cfg.x.btag_working_points = bTagWorkingPoints(year, run, campaign)
-    
+
     btagJECsources = analysis_data.get("btag_sf_jec_sources", [])
     btagJECsources += [f"Absolute_{year}", f"BBEC1_{year}", f"EC2_{year}", f"HF_{year}", f"RelativeSample_{year}", ""] 
     cfg.x.btag_sf_jec_sources = btagJECsources
@@ -625,14 +625,19 @@ def add_config(
     
     # Add data
     streams = datasets_config["data"]["streams"]
-    for year, year_cfg in datasets_config["data"].items():
-        if year == "streams":
+    for y, year_cfg in datasets_config["data"].items():
+        if y == "streams" or int(y) != campaign.x.year:
             continue
-        if int(year) != campaign.x.year:
-            continue
-        # year_cfg is a list of tag blocks
+    
+        # Normalize: if year_cfg is a dict (like 2024), wrap it into a list
+        if isinstance(year_cfg, dict):
+            year_cfg = [year_cfg]
+    
+        # year_cfg is now always a list of tag blocks
         for tag_block in year_cfg:
-            # tag_block is a dict like {"preEE": {...}}
+            if "periods" in tag_block and len(tag_block) == 1:
+                tag_block = {"": tag_block}  # empty tag name
+    
             for tag, tag_cfg in tag_block.items():
                 periods = tag_cfg["periods"]
     
@@ -641,10 +646,14 @@ def add_config(
                         ids=[5012, 6012, 7012, 8012],
                         values=[
                             *if_era(
-                                year=year,
-                                **({"tag": tag} if tag else {}),  # only add tag if it exists
-                                values=[f"data_{stream}_{period}" for stream in streams for period in periods])]
-                            )]
+                                year=y,
+                                **({"tag": tag} if tag else {}),
+                                values=[
+                                    f"data_{stream}_{period}"
+                                    for stream in streams
+                                    for period in periods],
+                                    )],
+                                )]
                 dataset_names += requested_data 
                 for dataset_name in requested_data:
                     dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
@@ -658,7 +667,7 @@ def add_config(
                     # bad ecalBadCalibFilter MET filter in 2022 data
                     # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2?rev=172#ECal_BadCalibration_Filter_Flag
                     # https://cms-talk.web.cern.ch/t/noise-met-filters-in-run-3/63346/5
-                    if year == 2022 and dataset.is_data and dataset.x.era in "FG":
+                    if y == 2022 and dataset.is_data and dataset.x.era in "FG":
                         dataset.add_tag("broken_ecalBadCalibFilter")
                     if limit_dataset_files:
                         for info in dataset.info.values():
@@ -666,7 +675,6 @@ def add_config(
    
     # verify that the root process of each dataset is part of any of the registered processes
     verify_config_processes(cfg, warn=True)
-
  
     # process groups for conveniently looping over certain processs
     # (used in wrapper_factory and during plotting)
@@ -1015,15 +1023,16 @@ def add_config(
     if run == 2:
         tauPOGJsonFile = "tau.json.gz"
         metPOGJsonFile = "met.json.gz"
-    elif run == 3 and year != 2024: # nasty names, workaround, also missing corrections for 2024 still
+    elif run == 3: # nasty names, workaround, also missing corrections for 2024 still
         if year == 2022:
             met_pog_suffix = f"{year}_{year}{'' if campaign.has_tag('preEE') else 'EE'}"
             tau_pog_suffix = f"{'pre' if campaign.has_tag('preEE') else 'post'}EE"
         elif year == 2023:
             met_pog_suffix = f"{year}_{year}{'' if campaign.has_tag('preBPix') else 'BPix'}"
             tau_pog_suffix = f"{'pre' if campaign.has_tag('preBPix') else 'post'}BPix"
-        tauPOGJsonFile = f"tau_DeepTau2018v2p5_{year}_{tau_pog_suffix}.json.gz"
-        metPOGJsonFile = f"met_xyCorrections_{met_pog_suffix}.json.gz"
+        if year !=2024:
+            tauPOGJsonFile = f"tau_DeepTau2018v2p5_{year}_{tau_pog_suffix}.json.gz"
+            metPOGJsonFile = f"met_xyCorrections_{met_pog_suffix}.json.gz"
         triggerFile = analysis_data["external_files"]["trigger"]
         campaign_tag = ""
         for tag in ("preEE", "postEE", "preBPix", "postBPix"):
@@ -1074,21 +1083,22 @@ def add_config(
         # dy weight and recoil corrections
         add_external("dy_weight_sf", ("/afs/cern.ch/work/m/mrieger/public/mirrors/external_files/DY_pTll_weights_v2.json.gz", "v1"))  # noqa: E501
         add_external("dy_recoil_sf", ("/afs/cern.ch/work/m/mrieger/public/mirrors/external_files/Recoil_corrections_v2.json.gz", "v1"))  # noqa: E501
-
-        # trigger scale factors
-        trigger_sf_internal_subpath = "AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47/data/TriggerScaleFactors"
-        add_external("trigger_sf", Ext(
-            triggerFile,
-            subpaths=DotDict(
-                muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/temporary_MuHlt_abseta_pt.json",
-                cross_muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossMuTauHlt.json",
-                electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/electronHlt.json",
-                cross_electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossEleTauHlt.json",
-                tau=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/tau_trigger_DeepTau2018v2p5_{year}{tau_pog_suffix}.json",
-                jet=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/ditaujet_jetleg_SFs_{campaign_tag}.json",
-            ),
-            version="v1",
-        ))
+        
+        if year !=2024:
+            # trigger scale factors
+            trigger_sf_internal_subpath = "AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47/data/TriggerScaleFactors"
+            add_external("trigger_sf", Ext(
+                triggerFile,
+                subpaths=DotDict(
+                    muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/temporary_MuHlt_abseta_pt.json",
+                    cross_muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossMuTauHlt.json",
+                    electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/electronHlt.json",
+                    cross_electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossEleTauHlt.json",
+                    tau=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/tau_trigger_DeepTau2018v2p5_{year}{tau_pog_suffix}.json",
+                    jet=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/ditaujet_jetleg_SFs_{campaign_tag}.json",
+                ),
+                version="v1",
+            ))
 
     #=============================================
     # reductions

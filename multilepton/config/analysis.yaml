@@ -84,6 +84,8 @@ datasets:
           periods: &preBPix_periods [c1, c2, c3, c4]
       - postBPix:
           periods: &postBPix_periods [d1, d2]
+    2024:
+      periods: [c, d, e, f, g, h, i]
 
   signal:
     nonresonant:

@@ -1,8 +1,12 @@
-# HH → Multilepton
+# HH (H → WW/ZZ/𝜏𝜏) → Multi-Leptons
+
+**Table of contents**
+
+[[_TOC_]]
 
 ## Introduction
 
-This is the code base for the Run2+Run3 iteration of the CMS HH Multilepton analysis.
+This is the code base for the Run2+Run3 iteration of the CMS HH Multileptons analysis.
 
 The code is forked and for now heavily based on the UHH bersion of the [HH → bb𝜏𝜏 analysis](https://github.com/uhh-cms/hh2bbtautau)
 and still very much WIP. Expect remnants from the bb𝜏𝜏 analysis, crashes and bugs, you have been warned!
@@ -14,7 +18,7 @@ Also join our channel on [mattermost](https://mattermost.web.cern.ch/cms-exp/cha
 (You will need to join the CMS team first if not done so).
 
 The code is currently developed with the Tallinn T2 (and lxplus) in mind.
-For further questions please, contact t\*\*\*\*.l\*\*\*\*@no-spam-cern.ch .
+For further questions please, contact t\*\*\*\*.l\*\*\*\*@no-spam-cern.ch.
 
 ## First time setup
 
@@ -91,13 +95,16 @@ law run cf.PlotVariables1D \
 or with
 
 ```shell
-    --workflow htcondor \
+    --workflow htcondor \ # or
+    --workflow slurm \    # or 
+    --workflow crab \     # to be tested!?
 ```
 
-crab to be tested.
-
 ## Documentation
-TODO but a general overview can be found in these slides: https://indico.cern.ch/event/1580193/contributions/6660044/attachments/3121091/5534653/multilep%20framework.pdf
+
+- Lives here: https://gitlab.cern.ch/hh-multileptons-full-analysis/hh-multileptons-doc
+- Talks:
+    - slides: https://indico.cern.ch/event/1580193/contributions/6660044/attachments/3121091/5534653/multilep%20framework.pdf
 
 ## 🙏 Contributors
 
@@ -118,7 +125,6 @@ TODO but a general overview can be found in these slides: https://indico.cern.ch
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-
 ## Useful links
 
 - [columnflow documentation](https://columnflow.readthedocs.io/en/latest/index.html)
@@ -128,7 +134,7 @@ TODO but a general overview can be found in these slides: https://indico.cern.ch
   - [GrASP](https://cms-pdmv-prod.web.cern.ch/grasp/)
   - [XSDB](https://xsdb-temp.app.cern.ch)
   - [DAS](https://cmsweb.cern.ch/das)
-NanoAOD:
+NanoAOD
   - [Nano documentation](https://gitlab.cern.ch/cms-nanoAOD/nanoaod-doc)
   - [Correctionlib files](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration)
 - JME
