@@ -901,7 +901,7 @@ def add_config(
     # nominal + simple shifts
     simple_shifts = [
         # (name, base_id, aliases, tags, aux)
-        #("nominal", 0, None, None),
+        ("nominal", 0, None, None, None),
         ("tune", 1, None, {"disjoint_from_nominal"}, None),
         ("hdamp", 3, None, {"disjoint_from_nominal"}, None),
         ("mtop", 5, None, {"disjoint_from_nominal"}, None),
@@ -913,7 +913,10 @@ def add_config(
     ]
     
     for name, base_id, aliases, tags, aux in simple_shifts:
-        register_shift_pair(cfg, name, base_id, aliases, tags, aux)
+        if name =='nominal':
+            cfg.add_shift(name, base_id)
+        else:
+            register_shift_pair(cfg, name, base_id, aliases, tags, aux)
     
     # JEC sources
     for jec_source in cfg.x.jec.Jet.uncertainty_sources:
@@ -967,11 +970,11 @@ def add_config(
     
     # Electron, muon, and energy corrections
     register_shift_pair(cfg, "e", 90, {"electron_weight": "electron_weight_{direction}"})
+    register_shift_pair(cfg, "mu", 100, {"muon_weight": "muon_weight_{direction}"})
     if run == 3 and year == 2022:
         logger.debug("adding ees and eer shifts")
         register_shift_pair(cfg, "ees", 92, {"Electron.pt": "Electron.pt_scale_{direction}"}, {"eec"})
         register_shift_pair(cfg, "eer", 94, {"Electron.pt": "Electron.pt_res_{direction}"}, {"eer"})
-    register_shift_pair(cfg, "mu", 100, {"muon_weight": "muon_weight_{direction}"})
     
     # b-tag uncertainties
     cfg.x.btag_unc_names = [

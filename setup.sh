@@ -51,7 +51,6 @@ setup_multilepton() {
     #
     # prevent repeated setups
     #
-
     cf_export_bool MULTILEPTON_SETUP
     if ${MULTILEPTON_SETUP} && ! ${CF_ON_SLURM}; then
         >&2 echo "the HH -> Multilepton analysis was already succesfully setup"
@@ -69,7 +68,6 @@ setup_multilepton() {
     # global variables
     # (MULTILEPTON = hhmultilepton, CF = columnflow)
     #
-
     # start exporting variables
     export MULTILEPTON_BASE="${this_dir}"
     export CF_BASE="${cf_base}"
@@ -78,7 +76,6 @@ setup_multilepton() {
     export CF_SETUP_NAME="${setup_name}"
     export CF_SCHEDULER_HOST="${CF_SCHEDULER_HOST:-naf-cms14.desy.de}"
     export CF_SCHEDULER_PORT="${CF_SCHEDULER_PORT:-8088}"
-
     # default job flavor settings (starting with naf / maxwell cluster defaults)
     # used by law.cfg and, in turn, tasks/framework/remote.py
     local cf_htcondor_flavor_default="cern_el9"
@@ -100,10 +97,8 @@ setup_multilepton() {
         cf_setup_interactive_body() {
             # the flavor will be cms
             export CF_FLAVOR="cms"
-
             # query common variables
             cf_setup_interactive_common_variables
-
             # specific variables would go here
         }
         cf_setup_interactive "${CF_SETUP_NAME}" "${MULTILEPTON_BASE}/.setups/${CF_SETUP_NAME}.sh" || return "$?"
@@ -117,13 +112,11 @@ setup_multilepton() {
     #
     # common variables
     #
-
     cf_setup_common_variables || return "$?"
 
     #
     # minimal local software setup
     #
-
     cf_setup_software_stack "${CF_SETUP_NAME}" || return "$?"
 
     # ammend paths that are not covered by the central cf setup
@@ -141,7 +134,6 @@ setup_multilepton() {
     #
     # additional common cf setup steps
     #
-
     cf_setup_post_install || return "$?"
 
     # update the law config file to switch from mirrored to bare wlcg targets
@@ -153,23 +145,19 @@ setup_multilepton() {
     #
     # finalize
     #
-
     export MULTILEPTON_SETUP="true"
 }
 
 multilepton_show_banner() {
     cat << EOF
-
-  $( cf_color blue_bright '||  || ||  || ')$( cf_color red_bright '          \\\   ' )$( cf_color blue_bright '||      ___  __   ====  ____  |\  |  ((  ' )
-  $( cf_color blue_bright '||==|| ||==|| ')$( cf_color red_bright 'H->WW/ZZ/𝜏𝜏))  ' )$( cf_color blue_bright '||     ||__ ||__)  ||   |  |  | \ |  \\\ ' )
-  $( cf_color blue_bright '||  || ||  || ')$( cf_color red_bright '          //  ' )$( cf_color blue_bright ' \\\===  ||__ ||     ||   |__|  |  \|   ))' )
-
+     $(cf_color blue_bright ' ╦ ╦  ╦ ╦')$(cf_color red_bright '             ')$(cf_color blue_bright '')
+     $(cf_color blue_bright ' ╠═╣  ╠═╣')$(cf_color red_bright ' (H→WW/ZZ/𝜏𝜏)')$(cf_color blue_bright ' → Multi-Leptons')
+     $(cf_color blue_bright ' ╩ ╩  ╩ ╩')$(cf_color red_bright '             ')$(cf_color blue_bright '')
 EOF
 }
 
 main() {
     # Invokes the main action of this script, catches possible error codes and prints a message.
-
     # run the actual setup
     if setup_multilepton "$@"; then
         multilepton_show_banner

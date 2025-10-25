@@ -6,7 +6,6 @@ HH -> multi-leptons selection methods.
 
 from columnflow.categorization import Categorizer, categorizer
 from columnflow.util import maybe_import
-import inspect
 
 ak = maybe_import("awkward")
 
@@ -551,9 +550,3 @@ def cat_tt(self: Categorizer, events: ak.Array, **kwargs) -> tuple[ak.Array, ak.
 @cat_tt.init
 def cat_tt_init(self: Categorizer) -> None:
     self.uses.add(f"{self.config_inst.x.met_name}.{{pt,phi}}")
-
-try:
-    _register_channel_categorizers()
-except Exception:
-    pass
-
