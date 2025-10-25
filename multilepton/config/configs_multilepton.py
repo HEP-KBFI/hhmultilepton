@@ -1061,44 +1061,47 @@ def add_config(
     # run specific files
     if run == 2:
         add_external("tau_trigger_sf", (localizePOGSF(year, "TAU", "tau.json.gz"), "v1"))
-        # hh-btag repository with TF saved model directories trained on Run2 UL samples
-        add_external("hh_btag_repo", Ext(
-            "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
-            subpaths=DotDict(even="hh-btag-master/models/HHbtag_v2_par_0", odd="hh-btag-master/models/HHbtag_v2_par_1"),  # noqa: E501
-            version="v2",
-        ))
-    
     elif run == 3:
         # electron energy correction and smearing
         add_external("electron_ss", (localizePOGSF(year, "EGM", f"electronSS_EtDependent{ver}.json.gz"), "v1"))
         # updated jet id
         add_external("jet_id", (localizePOGSF(year, "JME", "jetid.json.gz"), "v1"))
-        # hh-btag repository with TF saved model directories trained on 22+23 samples using pnet
-        add_external("hh_btag_repo", Ext(
-            "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
-            subpaths=DotDict(even="hh-btag-master/models/HHbtag_v3_par_0", odd="hh-btag-master/models/HHbtag_v3_par_1"),  # noqa: E501
-            version="v3",
-        ))
-
-        # dy weight and recoil corrections
-        add_external("dy_weight_sf", ("/afs/cern.ch/work/m/mrieger/public/mirrors/external_files/DY_pTll_weights_v2.json.gz", "v1"))  # noqa: E501
-        add_external("dy_recoil_sf", ("/afs/cern.ch/work/m/mrieger/public/mirrors/external_files/Recoil_corrections_v2.json.gz", "v1"))  # noqa: E501
         
-        if year !=2024:
-            # trigger scale factors
-            trigger_sf_internal_subpath = "AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47/data/TriggerScaleFactors"
-            add_external("trigger_sf", Ext(
-                triggerFile,
-                subpaths=DotDict(
-                    muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/temporary_MuHlt_abseta_pt.json",
-                    cross_muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossMuTauHlt.json",
-                    electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/electronHlt.json",
-                    cross_electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossEleTauHlt.json",
-                    tau=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/tau_trigger_DeepTau2018v2p5_{year}{tau_pog_suffix}.json",
-                    jet=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/ditaujet_jetleg_SFs_{campaign_tag}.json",
-                ),
-                version="v1",
-            ))
+    # FIXME to remove    
+    #if run == 3:
+    #    # hh-btag repository with TF saved model directories trained on Run2 UL samples
+    #    add_external("hh_btag_repo", Ext(
+    #        "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
+    #        subpaths=DotDict(even="hh-btag-master/models/HHbtag_v2_par_0", odd="hh-btag-master/models/HHbtag_v2_par_1"),  # noqa: E501
+    #        version="v2",
+    #    ))
+    #
+    #elif run == 3:
+    #    # hh-btag repository with TF saved model directories trained on 22+23 samples using pnet
+    #    add_external("hh_btag_repo", Ext(
+    #        "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
+    #        subpaths=DotDict(even="hh-btag-master/models/HHbtag_v3_par_0", odd="hh-btag-master/models/HHbtag_v3_par_1"),  # noqa: E501
+    #        version="v3",
+    #    ))
+    #    # dy weight and recoil corrections
+    #    add_external("dy_weight_sf", ("/afs/cern.ch/work/m/mrieger/public/mirrors/external_files/DY_pTll_weights_v2.json.gz", "v1"))  # noqa: E501
+    #    add_external("dy_recoil_sf", ("/afs/cern.ch/work/m/mrieger/public/mirrors/external_files/Recoil_corrections_v2.json.gz", "v1"))  # noqa: E501
+    #    
+    #    if year !=2024:
+    #        # trigger scale factors
+    #        trigger_sf_internal_subpath = "AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47/data/TriggerScaleFactors"
+    #        add_external("trigger_sf", Ext(
+    #            triggerFile,
+    #            subpaths=DotDict(
+    #                muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/temporary_MuHlt_abseta_pt.json",
+    #                cross_muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossMuTauHlt.json",
+    #                electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/electronHlt.json",
+    #                cross_electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossEleTauHlt.json",
+    #                tau=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/tau_trigger_DeepTau2018v2p5_{year}{tau_pog_suffix}.json",
+    #                jet=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/ditaujet_jetleg_SFs_{campaign_tag}.json",
+    #            ),
+    #            version="v1",
+    #        ))
 
     #=============================================
     # reductions

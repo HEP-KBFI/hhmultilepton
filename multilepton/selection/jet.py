@@ -28,7 +28,7 @@ ak = maybe_import("awkward")
 
 @selector(
     uses={
-        jet_id, fatjet_id,  # hhbtag,
+        jet_id, fatjet_id,
         "fired_trigger_ids", "TrigObj.{pt,eta,phi}",
         "Jet.{pt,eta,phi,mass,jetId}", IF_RUN_2("Jet.puId"),
         "FatJet.{pt,eta,phi,mass,msoftdrop,jetId,subJetIdx1,subJetIdx2}",

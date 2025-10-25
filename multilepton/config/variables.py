@@ -152,14 +152,6 @@ def add_variables(config: od.Config) -> None:
     )
     add_variable(
         config,
-        name="n_hhbtag",
-        expression="n_hhbtag",
-        binning=(4, -0.5, 3.5),
-        x_title="Number of HH b-tags",
-        discrete_x=True,
-    )
-    add_variable(
-        config,
         name="ht",
         expression=partial(build_ht),
         aux={"inputs": build_ht.inputs},
