@@ -101,18 +101,19 @@ def add_lazy_config(
 # Dataset Configurations
 # =======================================
 datasets = [
+    # cid = 32024115  => (run)3(year)2024(part)1(nano_version)15 
     # --- Private UHH NanoAOD datasets ---
-    ("cmsdb.campaigns.run3_2022_preEE_nano_uhh_v14", "campaign_run3_2022_preEE_nano_uhh_v14", "22preEE_v14_private", 5014),
-    ("cmsdb.campaigns.run3_2022_postEE_nano_uhh_v14", "campaign_run3_2022_postEE_nano_uhh_v14", "22postEE_v14_private", 6014),
-    ("cmsdb.campaigns.run3_2023_preBPix_nano_uhh_v14", "campaign_run3_2023_preBPix_nano_uhh_v14", "23preBPix_v14_private", 7014),
-    ("cmsdb.campaigns.run3_2023_postBPix_nano_uhh_v14", "campaign_run3_2023_postBPix_nano_uhh_v14", "23postBPix_v14_private", 8014),
+    ("cmsdb.campaigns.run3_2022_preEE_nano_uhh_v14", "campaign_run3_2022_preEE_nano_uhh_v14", "22preEE_v14_private", 320221114),
+    ("cmsdb.campaigns.run3_2022_postEE_nano_uhh_v14", "campaign_run3_2022_postEE_nano_uhh_v14", "22postEE_v14_private", 32022214),
+    ("cmsdb.campaigns.run3_2023_preBPix_nano_uhh_v14", "campaign_run3_2023_preBPix_nano_uhh_v14", "23preBPix_v14_private", 32023114),
+    ("cmsdb.campaigns.run3_2023_postBPix_nano_uhh_v14", "campaign_run3_2023_postBPix_nano_uhh_v14", "23postBPix_v14_private", 32023214),
 
     # --- Central NanoAOD datasets ---
-    ("cmsdb.campaigns.run3_2022_preEE_nano_v12", "campaign_run3_2022_preEE_nano_v12", "22preEE_v12_central", 5012),
-    ("cmsdb.campaigns.run3_2022_postEE_nano_v12", "campaign_run3_2022_postEE_nano_v12", "22postEE_v12_central", 6012),
-    ("cmsdb.campaigns.run3_2023_preBPix_nano_v12", "campaign_run3_2023_preBPix_nano_v12", "23preBPix_v12_central", 7012),
-    ("cmsdb.campaigns.run3_2023_postBPix_nano_v12", "campaign_run3_2023_postBPix_nano_v12", "23postBPix_v12_central", 8012),
-    ("cmsdb.campaigns.run3_2024_nano_v15", "campaign_run3_2024_nano_v15", "24_v15_central", 32024115),  # (run)3(year)2024(part)1(nano_version)15,
+    ("cmsdb.campaigns.run3_2022_preEE_nano_v12", "campaign_run3_2022_preEE_nano_v12", "22preEE_v12_central", 320221112),
+    ("cmsdb.campaigns.run3_2022_postEE_nano_v12", "campaign_run3_2022_postEE_nano_v12", "22postEE_v12_central", 32022212),
+    ("cmsdb.campaigns.run3_2023_preBPix_nano_v12", "campaign_run3_2023_preBPix_nano_v12", "23preBPix_v12_central", 32023112),
+    ("cmsdb.campaigns.run3_2023_postBPix_nano_v12", "campaign_run3_2023_postBPix_nano_v12", "23postBPix_v12_central", 32023212),
+    ("cmsdb.campaigns.run3_2024_nano_v15", "campaign_run3_2024_nano_v15", "24_v15_central", 32024115), 
 ]
 
 for module, attr, name, cid in datasets:

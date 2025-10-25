@@ -123,7 +123,6 @@ class AnalysisConfig:
             extract_cmsdb_entries(category_data)
         return sorted(set(process_names))
 
-    
 
 # Initialize config helper
 analysis_cfg = AnalysisConfig(analysis_data)
@@ -131,7 +130,7 @@ analysis_cfg = AnalysisConfig(analysis_data)
 
 def pogEraFormat(era):
     """Format era for POG file paths."""
-    if any(x in era for x in ['2022', '2023']):
+    if any(x in era for x in ['2022', '2023', '2024']):
         return era[:4] + '_Summer' + era.replace('20', '')
     else:
         return era.replace("UL", "") + "_UL"
@@ -148,9 +147,11 @@ def nested_dict():
     return defaultdict(nested_dict)
 
 
-#https://btv-wiki.docs.cern.ch/ScaleFactors/Run3Summer22EE/
+#https://btv-wiki.docs.cern.ch/ScaleFactors
 def bTagWorkingPoints(year, run, campaign):
-    fileName = localizePOGSF(year, "BTV", "btagging.json.gz")
+    getfromyear = year
+    if year == 2024: getfromyear = 2023 # still missing FIXME once they are updated by BTV-POG
+    fileName = localizePOGSF(getfromyear, "BTV", "btagging.json.gz")
     logger.info(f'... getting working points and discr cuts from : {fileName}')
     ceval = correctionlib.CorrectionSet.from_file(fileName)
     btagging = nested_dict()

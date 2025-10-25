@@ -214,7 +214,8 @@ class TriggerBits:
 
     v12: int | None = None
     v14: int | None = None
-    supported_versions: ClassVar[set[int]] = {12, 14}
+    v15: int | None = None
+    supported_versions: ClassVar[set[int]] = {12, 14, 15}
 
     def __post_init__(self) -> None:
         # versions might be strings such as "v12" that act as references
