@@ -112,7 +112,7 @@ datasets = [
     ("cmsdb.campaigns.run3_2022_postEE_nano_v12", "campaign_run3_2022_postEE_nano_v12", "22postEE_v12_central", 6012),
     ("cmsdb.campaigns.run3_2023_preBPix_nano_v12", "campaign_run3_2023_preBPix_nano_v12", "23preBPix_v12_central", 7012),
     ("cmsdb.campaigns.run3_2023_postBPix_nano_v12", "campaign_run3_2023_postBPix_nano_v12", "23postBPix_v12_central", 8012),
-    ("cmsdb.campaigns.run3_2024_nano_v15", "campaign_run3_2024_nano_v15", "24_v15_central", 8012),
+    ("cmsdb.campaigns.run3_2024_nano_v15", "campaign_run3_2024_nano_v15", "24_v15_central", 32024115),  # (run)3(year)2024(part)1(nano_version)15,
 ]
 
 for module, attr, name, cid in datasets:

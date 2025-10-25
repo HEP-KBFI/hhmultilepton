@@ -93,7 +93,7 @@ def jet_selection(
     )
 
     #
-    # hhb-jet identification
+    # FIXME need to go hhb-jet identification
     #
     # events = self[hhbtag](events, default_mask, lepton_results.x.lepton_pair, **kwargs)
     # hhbtag_scores = events.hhbtag_score

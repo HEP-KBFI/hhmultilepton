@@ -174,20 +174,35 @@ def bTagWorkingPoints(year, run, campaign):
     return json.loads(json.dumps(btagging))
 
 
-def build_leaf_processes(procs, base_name, jet_configs):
-    """Build leaf processes for a given base process name."""
+def build_stitching_config(process_name, inclusive_dataset):
+    """Build complete stitching configuration for a process."""
+    # Configuration for different jet multiplicities
+    JET_BIN_CONFIG = {
+        0: {"pt_bins": [], "suffix": "0j"},
+        1: {"pt_bins": ["0to40", "40to100", "100to200", "200to400", "400to600", "600toinf"], "suffix": "1j"},
+        2: {"pt_bins": ["0to40", "40to100", "100to200", "200to400", "400to600", "600toinf"], "suffix": "2j"},
+        "ge3": {"pt_bins": [], "suffix": "ge3j"},
+    }
     leaf_processes = []
-    for n_jets, pt_bins in jet_configs:
-        if n_jets == 0:
-            leaf_processes.append(procs.get(f"{base_name}_0j"))
-        elif pt_bins:
+
+    for jet_bin, config in JET_BIN_CONFIG.items():
+        if jet_bin == "ge3":
+            # Special case for >=3 jets
+            leaf_processes.append(procs.get(f"{process_name}_{config['suffix']}"))
+        elif config["pt_bins"]:
+            # Processes with pt bins
             leaf_processes.extend(
-                procs.get(f"{base_name}_{n_jets}j_pt{pt}")
-                for pt in pt_bins
+                procs.get(f"{process_name}_{config['suffix']}_pt{pt}")
+                for pt in config["pt_bins"]
             )
-    # Add >=3 jets process
-    leaf_processes.append(procs.get(f"{base_name}_ge3j"))
-    return leaf_processes
+        else:
+            # Processes without pt bins
+            leaf_processes.append(procs.get(f"{process_name}_{config['suffix']}"))
+
+    return {
+        "inclusive_dataset": inclusive_dataset,
+        "leaf_processes": leaf_processes,
+    }
 
 
 def convert_dataset_to_process(dataset, campaign, all_processes_from_campaign):
@@ -290,8 +305,8 @@ def add_config(
                 "2022EE": "Re-recoE+PromptFG", 
                 "2022": "Re-recoBCD",
                 "2023BPix": "PromptD",
-                "2023": "PromptC"
-                "2024": "PromptC"
+                "2023": "PromptC",
+                "2024": "Prompt",
                 }
         e_postfix = EGMcorrection.get(f"{year}{campaign.x.postfix}")
         e_prefix = 'UL-' if run == 2 else ''
@@ -542,6 +557,7 @@ def add_config(
     #=============================================
     # configure some default objects
     #=============================================
+    cfg.x.default_selector_steps = "all"
     cfg.x.default_calibrator = "default"
     cfg.x.default_selector = "default"
     cfg.x.default_reducer = "default"
@@ -651,9 +667,127 @@ def add_config(
     # verify that the root process of each dataset is part of any of the registered processes
     verify_config_processes(cfg, warn=True)
 
-    # Configure colors, labels, etc
+ 
+    # process groups for conveniently looping over certain processs
+    # (used in wrapper_factory and during plotting)
+    cfg.x.process_groups = {
+        "signals": [
+            "hh_ggf_hbb_htt_kl1_kt1",
+            "hh_vbf_hbb_htt_kv1_k2v1_kl1",
+        ],
+        "signals_ggf": [
+            "hh_ggf_hbb_htt_kl0_kt1",
+            "hh_ggf_hbb_htt_kl1_kt1",
+            "hh_ggf_hbb_htt_kl2p45_kt1",
+            "hh_ggf_hbb_htt_kl5_kt1",
+        ],
+        "backgrounds": (backgrounds := [
+            "dy",
+            "tt",
+            "qcd",
+            "st",
+            "tt_multiboson",
+            "multiboson",
+            "v",
+            "h",
+            "ewk",
+        ]),
+        "dy_split": [
+            "dy_m4to10", "dy_m10to50",
+            "dy_m50toinf_0j",
+            "dy_m50toinf_1j_pt40to100", "dy_m50toinf_1j_pt100to200", "dy_m50toinf_1j_pt200to400",
+            "dy_m50toinf_1j_pt400to600", "dy_m50toinf_1j_pt600toinf",
+            "dy_m50toinf_2j_pt40to100", "dy_m50toinf_2j_pt100to200", "dy_m50toinf_2j_pt200to400",
+            "dy_m50toinf_2j_pt400to600", "dy_m50toinf_2j_pt600toinf",
+        ],
+        "dy_split_no_incl": [
+            "dy_m4to10", "dy_m10to50",
+            "dy_m50toinf_0j", "dy_m50toinf_1j", "dy_m50toinf_2j",
+            "dy_m50toinf_1j_pt0to40", "dy_m50toinf_1j_pt40to100", "dy_m50toinf_1j_pt100to200",
+            "dy_m50toinf_1j_pt200to400", "dy_m50toinf_1j_pt400to600", "dy_m50toinf_1j_pt600toinf",
+            "dy_m50toinf_2j_pt0to40", "dy_m50toinf_2j_pt40to100", "dy_m50toinf_2j_pt100to200",
+            "dy_m50toinf_2j_pt200to400", "dy_m50toinf_2j_pt400to600", "dy_m50toinf_2j_pt600toinf",
+        ],
+        "sm_ggf": (sm_ggf_group := ["hh_ggf_hbb_htt_kl1_kt1", *backgrounds]),
+        "sm": (sm_group := ["hh_ggf_hbb_htt_kl1_kt1", "hh_vbf_hbb_htt_kv1_k2v1_kl1", *backgrounds]),
+        "sm_ggf_data": ["data"] + sm_ggf_group,
+        "sm_data": ["data"] + sm_group,
+    }
+
+    # define inclusive datasets for the stitched process identification with corresponding leaf processes
+    # Drell-Yan and W+jets configurations
+    #cfg.x.dy_stitching = {
+    #    "m50toinf": build_stitching_config("dy_m50toinf", cfg.datasets.n.dy_m50toinf_amcatnlo),}
+    #cfg.x.w_lnu_stitching = {
+     #   "incl": build_stitching_config("w_lnu", cfg.datasets.n.w_lnu_amcatnlo),}
+
+    # dataset groups for conveniently looping over certain datasets
+    # (used in wrapper_factory and during plotting)
+    cfg.x.dataset_groups = {
+        "data": (data_group := [dataset.name for dataset in cfg.datasets if dataset.is_data]),
+        "backgrounds": (backgrounds := [
+            # ! this "mindlessly" includes all non-signal MC datasets from above
+            dataset.name for dataset in cfg.datasets
+            if dataset.is_mc and not dataset.has_tag("signal")
+        ]),
+        "backgrounds_unstitched": (backgrounds_unstitched := [
+            dataset.name for dataset in cfg.datasets
+            if (
+                dataset.is_mc and
+                not dataset.has_tag("signal") and
+                not dataset.has_tag({"dy_stitched", "w_lnu_stitched"}, mode=any)
+            )
+        ]),
+        "sm_ggf": (sm_ggf_group := ["hh_ggf_hbb_htt_kl1_kt1_powheg", *backgrounds]),
+        "sm": (sm_group := [
+            "hh_ggf_hbb_htt_kl1_kt1_powheg",
+            "hh_vbf_hbb_htt_kv1_k2v1_kl1_madgraph",
+            *backgrounds,
+        ],
+        ),
+        "sm_unstitched": (sm_group_unstitched := [
+            "hh_ggf_hbb_htt_kl1_kt1_powheg",
+            "hh_vbf_hbb_htt_kv1_k2v1_kl1_madgraph",
+            *backgrounds_unstitched,
+        ]),
+        "sm_ggf_data": data_group + sm_ggf_group,
+        "sm_data": data_group + sm_group,
+        "sm_data_unstitched": data_group + sm_group_unstitched,
+        "dy": [dataset.name for dataset in cfg.datasets if dataset.has_tag("dy")],
+        "w_lnu": [dataset.name for dataset in cfg.datasets if dataset.has_tag("w_lnu")],
+    }
+
+    # category groups for conveniently looping over certain categories
+    # (used during plotting)
+    cfg.x.category_groups = {}
+
+    # variable groups for conveniently looping over certain variables
+    # (used during plotting)
+    cfg.x.variable_groups = {
+        "hh": (hh := [f"hh_{var}" for var in ["energy", "mass", "pt", "eta", "phi", "dr"]]),
+        "dilep": (dilep := [f"dilep_{var}" for var in ["energy", "mass", "pt", "eta", "phi", "dr"]]),
+        "dijet": (dijet := [f"dijet_{var}" for var in ["energy", "mass", "pt", "eta", "phi", "dr"]]),
+        "default": [
+            *dijet, *dilep, *hh,
+            "mu1_pt", "mu1_eta", "mu1_phi", "mu2_pt", "mu2_eta", "mu2_phi",
+            "e1_pt", "e1_eta", "e1_phi", "e2_pt", "e2_eta", "e2_phi",
+            "tau1_pt", "tau1_eta", "tau1_phi", "tau2_pt", "tau2_eta", "tau2_phi",
+        ],
+    }
+
+    # selector step groups for conveniently looping over certain steps
+    # (used in cutflow tasks)
+    cfg.x.selector_step_groups = {
+        "all": [],
+        "none": ["json"],
+        "default": ["json", "trigger", "met_filter", "jet_veto_map", "lepton", "jet2"],
+    }
+
+    # plotting overwrites
     stylize_processes(cfg)
-   
+    # Configure colors, labels, etc
+    setup_plot_styles(cfg) 
+
     #=============================================
     # Jet Energy Corrections (JEC) and Jet Energy Resolution (JER)
     #=============================================
