@@ -165,10 +165,15 @@ def bTagWorkingPoints(year, run, campaign):
         raise ValueError(f"Unsupported run: {run}")
 
     era = f"{year}{campaign.x.postfix}"
+    mlwps = {'L': 'loose',
+             'M': 'medium',
+             'T': 'tight',
+             'XT': 'xtight',
+             'XXT': 'xxtight'}
     for tagger in taggers:
         for wp in ['L', 'M', 'T', 'XT', 'XXT']:
             try:
-                btagging[tagger][wp][era] = ceval[f"{tagger.replace('MD', '')}_wp_values"].evaluate(wp)
+                btagging[tagger][mlwps[wp]][era] = ceval[f"{tagger.replace('MD', '')}_wp_values"].evaluate(wp)
             except Exception as e:
                 logger.warning(f"Failed to evaluate {tagger} {wp} for {era}: {e}")
     # Optionally convert defaultdicts to normal dicts for output
@@ -318,6 +323,7 @@ def add_config(
         )
         cfg.x.eec = EGammaCorrectionConfig(
             correction_set="Scale",
+            compound=False,
             value_type="total_correction",
             uncertainty_type="total_uncertainty",
         )
@@ -1040,8 +1046,8 @@ def add_config(
             met_pog_suffix = f"{year}_{year}{'' if campaign.has_tag('preBPix') else 'BPix'}"
             tau_pog_suffix = f"{'pre' if campaign.has_tag('preBPix') else 'post'}BPix"
         if year == 2024: # just for now FIXME 
-            tauPOGJsonFile = "tau.json.gz"
-            metPOGJsonFile = "met.json.gz"
+            tauPOGJsonFile = "tau_DeepTau2018v2p5_2023_preBPix.json.gz"
+            metPOGJsonFile = "met_xyCorrections_2023_2023.json.gz"
         else:
             tauPOGJsonFile = f"tau_DeepTau2018v2p5_{year}_{tau_pog_suffix}.json.gz"
             metPOGJsonFile = f"met_xyCorrections_{met_pog_suffix}.json.gz"
@@ -1068,7 +1074,7 @@ def add_config(
     add_external("electron_sf", (localizePOGSF(year, "EGM", f"electron{ver}.json.gz"), "v1"))
     
     getfromyear = year
-    if year == 2024: getfromyear = 2018 # correction still missing for 2024 workaround with 2023 for now
+    if year == 2024: getfromyear = 2023 # correction still missing for 2024 workaround with 2023 preBix for now
     add_external("tau_sf", (localizePOGSF(getfromyear, "TAU", f"{tauPOGJsonFile}"), "v1"))
     add_external("pu_sf", (localizePOGSF(getfromyear, "LUM", "puWeights.json.gz"), "v1"))
     add_external("met_phi_corr", (localizePOGSF(getfromyear, "JME", f"{metPOGJsonFile}"), "v1"))
