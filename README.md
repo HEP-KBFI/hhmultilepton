@@ -1,8 +1,13 @@
 # HH (H → WW/ZZ/𝜏𝜏) → Multi-Leptons
 
 **Table of contents**
+- [Introduction](#introduction)
+- [Installation (first time)](#first-time-setup)
+- [Usage](#usage)
+- [Useful links](#useful-links)
+- [Contributors](#contributors)
+- [Development](#development)
 
-[[_TOC_]]
 
 ## Introduction
 
@@ -27,9 +32,13 @@ For further questions please, contact t\*\*\*\*.l\*\*\*\*@no-spam-cern.ch.
 git clone --recursive git@github.com:HEP-KBFI/hhmultilepton.git
 cd hhmultilepton
 
+# get a voms token
+voms-proxy-init -voms cms -rfc -valid 196:00
+
 # source the setup and store decisions in .setups/dev.sh (arbitrary name)
 source setup.sh dev
 
+# sourcing the above you will be asked to confirm or change the default exports mentionned below 
 # Decisions include storage locations, these should be set according to the system you are running the code on:
 # CF_DATA should point to a location in home (manivald) or afs (lxplus), same as CF_SOFTWARE_BASE and CF_JOB_BASE
 # CF_WLCG_CACHE_ROOT is a cache for remote files should be on /local/user (manivald) or eos (lxplus).
@@ -54,12 +63,9 @@ export CF_SOFTWARE_BASE="/eos/user/$CF_CERN_USER_FIRSTCHAR/$CF_CERN_USER/HHMulti
 export CF_JOB_BASE="/local/$CF_CERN_USER/HHMultilepton_Run3/jobs"
 export CF_WLCG_CACHE_ROOT="/local/$CF_CERN_USER/HHMultilepton_Run3/cf_scratch"
 
-# After first time setup, *if on manivald the estonian login node*, open the created setup file and add:
+# After first time setup, *if on manivald the estonian login node*, open the created setup file ( in this case .setups/dev.sh) and add:
 export TMPDIR="/scratch/local/$CF_CERN_USER"
 
-# get a voms token:
-
-voms-proxy-init -voms cms -rfc -valid 196:00
 ```
 
 <img width="1336" height="506" alt="image" src="https://github.com/user-attachments/assets/29e6f810-e273-4b2e-9a80-02427e228298" />
@@ -69,9 +75,11 @@ Code can now be run but first storage locations for the tasks outputs should be 
 Currently outputs point to the user store of the T2 on manivald so that outputs are also accessible remotely, but we will likely adapt this over time depending on the output.
 I.e large outputs available in a remote reachable location, smaller ones on local stores. Larger ones likely also split by user/cluster so that central versions can be reused.
 
-*Important* For development on lxplus *i strongly * advise to change wlcg_fs_manivald to wlcg_fs_cernbox in the beginning.
+**Important For development on lxplus *i strongly * advise to change `wlcg_fs_manivald` to `wlcg_fs_cernbox` in the beginning.**
 
-After this is set, try to run on signal locally:
+## Usage 
+
+After this is set, try to run on `hh_ggf_htt_hvv_kl1_kt1_powheg` signal locally:
 
 ```shell
 law run cf.PlotVariables1D \
@@ -81,7 +89,7 @@ law run cf.PlotVariables1D \
     --datasets hh_ggf_htt_hvv_kl1_kt1_powheg \
 ```
 
-And if this runs on background via slurm/condor
+And if this runs on `zz_pythia` background via slurm/condor
 
 ```shell
 law run cf.PlotVariables1D \
@@ -96,7 +104,6 @@ or with
 
 ```shell
     --workflow htcondor \ # or
-    --workflow slurm \    # or 
     --workflow crab \     # to be tested!?
 ```
 
@@ -137,10 +144,8 @@ or with
 NanoAOD
   - [Nano documentation](https://gitlab.cern.ch/cms-nanoAOD/nanoaod-doc)
   - [Correctionlib files](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration)
-- JME
-  - [Docs](https://cms-jerc.web.cern.ch)
-- BTV
-  - [Docs](https://btv-wiki.docs.cern.ch)
+- [JME](https://cms-jerc.web.cern.ch)
+- [BTV]((https://btv-wiki.docs.cern.ch)
 - TAU
   - [Run 2 Twiki](https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2)
   - [Run 3 Twiki](https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun3)
@@ -150,6 +155,6 @@ NanoAOD
 
 - Source hosted at [GitHub](https://github.com/HEP-KBFI/hhmultilepton)
 - Report issues, questions, feature requests on [GitHub Issues](https://github.com/HEP-KBFI/hhmultilepton/issues)
-- Ideally also ping us on MM
+- Ideally also ping us on [mattermost](https://mattermost.web.cern.ch/cms-exp/channels/hh-multilepton-run3).
 - For new features open a new branch before merging into master, ask for a code review by a felllow contributor and dont forget linting!
-- Happy coding :)
+- Happy coding 😊

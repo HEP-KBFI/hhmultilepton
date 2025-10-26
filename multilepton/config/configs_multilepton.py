@@ -245,8 +245,8 @@ def add_config(
     
     # get all root processes
     all_processes_from_campaign = get_root_processes_from_campaign(campaign)
-    for proc in all_processes_from_campaign:
-        print( proc) #, proc.name, proc.id) 
+    for proc in list(set(all_processes_from_campaign)):
+        print( proc) #proc.name) #, proc.id) 
     
     # create a config by passing the campaign
     cfg = od.Config(
@@ -454,6 +454,11 @@ def add_config(
                 raise ValueError(f"Unsupported JERC configuration for Run 3: year={year}, postfix={campaign.x.postfix}")
             jec_campaign = f"Summer{newyear}{campaign.x.postfix}{jerc_postfix}"
             jer_campaign = f"Summer{newyear}{campaign.x.postfix}{jerc_postfix}"
+            # For the time being, use the Summer23BPix JERs for 2024 data. 
+            # The JER MC_ScaleFactor and MC_PtResolution for the Summer24 samples 
+            # will be announced soon (expected by the end of October 2025).
+            if year ==2024:
+                jer_campaign = "Summer23BPixPrompt23_RunD"
             # Add special Run fragment for 2023
             if year == 2023:
                 jer_campaign += f"_Run{'Cv1234' if campaign.has_tag('preBPix') else 'D'}"
@@ -797,6 +802,12 @@ def add_config(
     # Jet Energy Corrections (JEC) and Jet Energy Resolution (JER)
     #=============================================
     jecjerdb = ConfigureJets(year, run, campaign)
+    jec_uncertainty_sources = analysis_data['jec_sources']
+    if year == 2024:
+        for src in ["TimeRunA", "TimeRunB", "TimeRunC", "TimeRunD"]:
+            if src in jec_uncertainty_sources:
+                jec_uncertainty_sources.remove(src)
+
     cfg.x.jec = DotDict.wrap({
         "Jet": {
             "campaign": jecjerdb["jec_campaign"],
@@ -805,7 +816,7 @@ def add_config(
             "jet_type": jecjerdb["jet_type"],
             "levels": ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"],
             "levels_for_type1_met": ["L1FastJet"],
-            "uncertainty_sources": analysis_data['jec_sources'],
+            "uncertainty_sources": jec_uncertainty_sources, 
         },
     })
     
