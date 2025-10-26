@@ -1,4 +1,4 @@
-# HH (H → WW/ZZ/𝜏𝜏) → Multi-Leptons
+# HH (H → WW/ZZ/𝜏𝜏) → Multi-Leptons Analysis
 
 **Table of contents**
 - [Introduction](#introduction)
@@ -145,7 +145,7 @@ NanoAOD
   - [Nano documentation](https://gitlab.cern.ch/cms-nanoAOD/nanoaod-doc)
   - [Correctionlib files](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration)
 - [JME](https://cms-jerc.web.cern.ch)
-- [BTV]((https://btv-wiki.docs.cern.ch)
+- [BTV](https://btv-wiki.docs.cern.ch)
 - TAU
   - [Run 2 Twiki](https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2)
   - [Run 3 Twiki](https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun3)
