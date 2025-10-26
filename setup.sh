@@ -134,6 +134,13 @@ setup_multilepton() {
     #
     # additional common cf setup steps
     #
+    if ! (micromamba env export | grep -q correctionlib); then
+    echo correctionlib misisng, installing...
+    micromamba install \
+        correctionlib==2.6.4 \
+        || return "$?"
+    micromamba clean --yes --all
+    fi
     cf_setup_post_install || return "$?"
 
     # update the law config file to switch from mirrored to bare wlcg targets
