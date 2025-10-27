@@ -157,10 +157,10 @@ def bTagWorkingPoints(year, run, campaign):
     btagging = nested_dict()
     if run == 2:
         taggers = ["deepJet", "deepcsv", "particleNetMD"]
-        eras = ["2016APV", "2016", "2017", "2018"]
+        valid_eras = ["2016APV", "2016", "2017", "2018"]
     elif run == 3:
         taggers = ["deepJet", "particleNet", "robustParticleTransformer", "particleNetMD"]
-        eras = ["2022", "2022EE", "2023", "2023BPix", "2024"]
+        valid_eras = ["2022", "2022EE", "2023", "2023BPix", "2024"]
     else:
         raise ValueError(f"Unsupported run: {run}")
 
@@ -170,10 +170,13 @@ def bTagWorkingPoints(year, run, campaign):
              'T': 'tight',
              'XT': 'xtight',
              'XXT': 'xxtight'}
+    if era not in "".join(valid_eras):
+        raise ValueError(f"Era {era} not valid for run {run}")
+
     for tagger in taggers:
         for wp in ['L', 'M', 'T', 'XT', 'XXT']:
             try:
-                btagging[tagger][mlwps[wp]][era] = ceval[f"{tagger.replace('MD', '')}_wp_values"].evaluate(wp)
+                btagging[tagger][mlwps[wp]]= ceval[f"{tagger.replace('MD', '')}_wp_values"].evaluate(wp)
             except Exception as e:
                 logger.warning(f"Failed to evaluate {tagger} {wp} for {era}: {e}")
     # Optionally convert defaultdicts to normal dicts for output
@@ -250,8 +253,8 @@ def add_config(
     
     # get all root processes
     all_processes_from_campaign = get_root_processes_from_campaign(campaign)
-    for proc in list(set(all_processes_from_campaign)):
-        print( proc) #proc.name) #, proc.id) 
+    #for proc in list(set(all_processes_from_campaign)):
+    #    print( proc) #proc.name) #, proc.id) 
     
     # create a config by passing the campaign
     cfg = od.Config(
@@ -285,13 +288,9 @@ def add_config(
 
     def ConfigureMuons(cfg, run, year, campaign):
         if run == 2:
-            cfg.x.muon_sf_names = MuonSFConfig(
-                correction="NUM_TightRelIso_DEN_TightIDandIPCut"
-            )
+            cfg.x.muon_sf_names = MuonSFConfig(correction="NUM_TightRelIso_DEN_TightIDandIPCut")
         elif run == 3:
-            cfg.x.muon_sf_names = MuonSFConfig(
-                correction="NUM_TightPFIso_DEN_TightID"
-            )
+            cfg.x.muon_sf_names = MuonSFConfig(correction="NUM_TightPFIso_DEN_TightID")
             cfg.x.muon_trigger_sf_names = MuonSFConfig("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight")
             cfg.x.single_trigger_muon_data_effs_cfg = MuonSFConfig("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_DATAeff")
             cfg.x.single_trigger_muon_mc_effs_cfg = MuonSFConfig("NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight_MCeff")
@@ -552,6 +551,30 @@ def add_config(
         )
 
     def if_era(values=None, **kwargs):
+        """
+        Return a filtered list of values if the current era matches, 
+        or an empty list otherwise.
+        Works naturally with `not in_era(...)`.
+        """
+        return list(filter(bool, values or [])) if find_match_era(**kwargs) else []
+    
+    def if_not_era(**kwargs):
+        return not in_era(in_config(**kwargs))
+ 
+    def if_config(names, ids, values):
+        """
+        Return a filtered list of values if cfg.id is in the provided ids,
+        or an empty list otherwise.
+        Works naturally with `not in_config_id(...)`.
+        """
+        if names: return list(filter(bool, values or [])) if cfg.name in ids else []
+        elif ids: return list(filter(bool, values or [])) if cfg.id in ids else []
+    
+    def if__config(**kwargs):
+        return not bool(in_config(**kwargs))
+            
+
+    def if_era(values=None, **kwargs):
         return list(filter(bool, values or [])) if find_match_era(**kwargs) else []
 
     def if_not_era(values=None, **kwargs):
@@ -686,44 +709,14 @@ def add_config(
  
     # process groups for conveniently looping over certain processs
     # (used in wrapper_factory and during plotting)
+    # I think the goal of this code here is to use 2 signals only
+    # ask Torben or Matheus otherwise add all signals from  yaml #FIXME
     cfg.x.process_groups = {
-        "signals": [
-            "hh_ggf_hbb_htt_kl1_kt1",
-            "hh_vbf_hbb_htt_kv1_k2v1_kl1",
-        ],
-        "signals_ggf": [
-            "hh_ggf_hbb_htt_kl0_kt1",
-            "hh_ggf_hbb_htt_kl1_kt1",
-            "hh_ggf_hbb_htt_kl2p45_kt1",
-            "hh_ggf_hbb_htt_kl5_kt1",
-        ],
-        "backgrounds": (backgrounds := [
-            "dy",
-            "tt",
-            "qcd",
-            "st",
-            "tt_multiboson",
-            "multiboson",
-            "v",
-            "h",
-            "ewk",
-        ]),
-        "dy_split": [
-            "dy_m4to10", "dy_m10to50",
-            "dy_m50toinf_0j",
-            "dy_m50toinf_1j_pt40to100", "dy_m50toinf_1j_pt100to200", "dy_m50toinf_1j_pt200to400",
-            "dy_m50toinf_1j_pt400to600", "dy_m50toinf_1j_pt600toinf",
-            "dy_m50toinf_2j_pt40to100", "dy_m50toinf_2j_pt100to200", "dy_m50toinf_2j_pt200to400",
-            "dy_m50toinf_2j_pt400to600", "dy_m50toinf_2j_pt600toinf",
-        ],
-        "dy_split_no_incl": [
-            "dy_m4to10", "dy_m10to50",
-            "dy_m50toinf_0j", "dy_m50toinf_1j", "dy_m50toinf_2j",
-            "dy_m50toinf_1j_pt0to40", "dy_m50toinf_1j_pt40to100", "dy_m50toinf_1j_pt100to200",
-            "dy_m50toinf_1j_pt200to400", "dy_m50toinf_1j_pt400to600", "dy_m50toinf_1j_pt600toinf",
-            "dy_m50toinf_2j_pt0to40", "dy_m50toinf_2j_pt40to100", "dy_m50toinf_2j_pt100to200",
-            "dy_m50toinf_2j_pt200to400", "dy_m50toinf_2j_pt400to600", "dy_m50toinf_2j_pt600toinf",
-        ],
+        "signals": ["hh_ggf_hbb_htt_kl1_kt1","hh_vbf_hbb_htt_kv1_k2v1_kl1",],
+        "signals_ggf": analysis_data['datasets']['signal']['nonresonant']['ggf']['cmsdb'],
+        "backgrounds": (backgrounds := analysis_data['datasets']['background'].keys()),
+        "dy_split": analysis_data['datasets']['background']['dy']['cmsdb'],
+        "dy_split_no_incl": analysis_data['datasets']['background']['dy']['cmsdb'],
         "sm_ggf": (sm_ggf_group := ["hh_ggf_hbb_htt_kl1_kt1", *backgrounds]),
         "sm": (sm_group := ["hh_ggf_hbb_htt_kl1_kt1", "hh_vbf_hbb_htt_kv1_k2v1_kl1", *backgrounds]),
         "sm_ggf_data": ["data"] + sm_ggf_group,
@@ -735,7 +728,7 @@ def add_config(
     #cfg.x.dy_stitching = {
     #    "m50toinf": build_stitching_config("dy_m50toinf", cfg.datasets.n.dy_m50toinf_amcatnlo),}
     #cfg.x.w_lnu_stitching = {
-     #   "incl": build_stitching_config("w_lnu", cfg.datasets.n.w_lnu_amcatnlo),}
+    #   "incl": build_stitching_config("w_lnu", cfg.datasets.n.w_lnu_amcatnlo),}
 
     # dataset groups for conveniently looping over certain datasets
     # (used in wrapper_factory and during plotting)

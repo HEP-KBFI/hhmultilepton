@@ -11,7 +11,6 @@ import order as od
 from columnflow.util import DotDict
 
 from multilepton.hist_hooks.blinding import add_hooks as add_blinding_hooks
-from multilepton.hist_hooks.qcd import add_hooks as add_qcd_hooks
 from multilepton.hist_hooks.binning import add_hooks as add_binning_hooks
 from multilepton.tasks.base import MultileptonTask
 from multilepton.config.configs_multilepton import add_config
@@ -48,7 +47,6 @@ analysis_multilepton.x.store_parts_modifiers = {}
 # =======================================
 analysis_multilepton.x.hist_hooks = DotDict()
 add_blinding_hooks(analysis_multilepton)
-add_qcd_hooks(analysis_multilepton)
 add_binning_hooks(analysis_multilepton)
 
 # =======================================
