@@ -75,34 +75,33 @@ Code can now be run but first storage locations for the tasks outputs should be 
 Currently outputs point to the user store of the T2 on manivald so that outputs are also accessible remotely, but we will likely adapt this over time depending on the output.
 I.e large outputs available in a remote reachable location, smaller ones on local stores. Larger ones likely also split by user/cluster so that central versions can be reused.
 
-**Important For development on lxplus *i strongly * advise to change `wlcg_fs_manivald` to `wlcg_fs_cernbox` in the beginning.**
+**Important For development on lxplus "i strongly" advise to change `wlcg_fs_manivald` to `wlcg_fs_cernbox` in the beginning.**
 
 ## Usage 
 
-After this is set, try to run on `hh_ggf_htt_hvv_kl1_kt1_powheg` signal locally:
+1. Setup your enviorement (**always**):
+
+```shell
+voms-proxy-init -voms cms -rfc -valid 196:00
+
+# source the setup and export env in the sorted file " .setups/dev.sh " in this case
+source setup.sh dev
+```
+
+2. Try to run on 1 signal, 1 backgound and 1 data locally:
 
 ```shell
 law run cf.PlotVariables1D \
     --version test \
     --producers default \
     --variables nmu \
-    --datasets hh_ggf_htt_hvv_kl1_kt1_powheg \
+    --datasets hh_ggf_htt_hvv_kl1_kt1_powheg,zz_pythia,data_e_c  \
 ```
 
-And if this runs on `zz_pythia` background via slurm/condor
+3. And if the above run sucessfully, you can proceed to submit jobs via slurm/condor adding 
 
 ```shell
-law run cf.PlotVariables1D \
-    --version test \
-    --producers default \
-    --variables nmu \
-    --datasets zz_pythia \
-    --workflow slurm \
-```
-
-or with
-
-```shell
+    --workflow slurm \ # or
     --workflow htcondor \ # or
     --workflow crab \     # to be tested!?
 ```
