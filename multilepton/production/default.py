@@ -48,7 +48,7 @@ def default(self: Producer, events: ak.Array, **kwargs) -> ak.Array:
     # category ids
     events = attach_coffea_behavior(
         events,
-        collections={"HHBJet": default_coffea_collections["Jet"]},
+        collections={"Jet": default_coffea_collections["Jet"]},
     )
     events = self[category_ids](events, **kwargs)
 

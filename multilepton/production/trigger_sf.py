@@ -397,7 +397,7 @@ def etau_mutau_trigger_weight(
     uses={
         "channel_id", "matched_trigger_ids",
         tau_trigger_effs_cclub, jet_trigger_efficiencies,
-        "HHBJet.{pt,eta,phi,mass}",
+        "Jet.{pt,eta,phi,mass}",
     },
     produces={
         "tautau_trigger_weight",
@@ -435,9 +435,9 @@ def tautau_trigger_weight(
     ttj_triggered = ((events.channel_id == channel.id) & ttj_trigger_passed)
     # ttv_triggered = ((events.channel_id == channel.id) & ttv_trigger_passed)  # vbf treatment left out from here on
 
-    sorted_hhbjet_indices = ak.argsort(events.HHBJet.pt, axis=1, ascending=False)
-    leading_HHBJet_mask = (ak.zeros_like(events.HHBJet.pt, dtype=int) == ak.local_index(events.HHBJet.pt)[sorted_hhbjet_indices])  # noqa
-    jet_mask = (ttj_triggered & leading_HHBJet_mask)
+    sorted_jet_indices = ak.argsort(events.Jet.pt, axis=1, ascending=False)
+    leading_Jet_mask = (ak.zeros_like(events.Jet.pt, dtype=int) == ak.local_index(events.Jet.pt)[sorted_hhbjet_indices])  # noqa
+    jet_mask = (ttj_triggered & leading_Jet_mask)
     # create jet trigger efficiencies
     events = self[jet_trigger_efficiencies](events, jet_mask, **kwargs)
 

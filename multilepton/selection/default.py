@@ -169,7 +169,6 @@ def default(
 
         # parton shower weights
         events = self[ps_weights](events, invalid_weights_action="ignore_one", **kwargs)
-
         # pileup weights
         events = self[pu_weight](events, **kwargs)
 
@@ -198,15 +197,11 @@ def default(
         events = self[process_ids](events, **kwargs)
 
     # create jet collections for categorization
-    events["HHBJet"] = events.Jet[results.objects.Jet.HHBJet]
     events["FatJet"] = events.FatJet[results.objects.FatJet.FatJet]
-
     # store number of jets for stats and histograms
     events = set_ak_column(events, "n_jets_stats", results.x.n_central_jets, value_type=np.int32)
-
     # some cutflow features
     events = self[cutflow_features](events, results.objects, **kwargs)
-
     # combined event selection after all steps
     event_sel = reduce(and_, results.steps.values())
     results.event = event_sel

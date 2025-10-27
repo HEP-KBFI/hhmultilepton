@@ -24,7 +24,7 @@ set_ak_column_f32 = functools.partial(set_ak_column, value_type=np.float32)
 
 @producer(
     uses={
-        "channel_id", "HHBJet.{pt,eta,phi,mass}",
+        "channel_id", "Jet.{pt,eta,phi,mass}",
     },
     # only run on mc
     mc_only=True,
@@ -51,8 +51,8 @@ def jet_trigger_efficiencies(
     """
 
     # flat absolute eta and pt views
-    abs_eta = flat_np_view(abs(events.HHBJet.eta[jet_mask]), axis=1)
-    pt = flat_np_view(events.HHBJet.pt[jet_mask], axis=1)
+    abs_eta = flat_np_view(abs(events.Jet.eta[jet_mask]), axis=1)
+    pt = flat_np_view(events.Jet.pt[jet_mask], axis=1)
 
     variable_map = {
         "pt": pt,
@@ -77,7 +77,7 @@ def jet_trigger_efficiencies(
             sf_flat = self.jet_trig_corrector(*inputs)
 
             # add the correct layout to it
-            sf = layout_ak_array(sf_flat, events.HHBJet.pt[jet_mask])
+            sf = layout_ak_array(sf_flat, events.Jet.pt[jet_mask])
 
             # store it
             events = set_ak_column(events, f"{self.efficiency_name}_{kind}{postfix}", sf, value_type=np.float32)

@@ -49,53 +49,6 @@ def build_dilep(events, which=None):
     raise ValueError(f"Unknown which: {which}")
 
 
-def build_dibjet(events, which=None):
-    events = attach_coffea_behavior(events, {"HHBJet": default_coffea_collections["Jet"]})
-    hhbjets = events.HHBJet[:, :2]
-    if which == "dr":
-        return delta_r12(hhbjets)
-    dijet = hhbjets.sum(axis=1)
-    if which is None:
-        return dijet * 1
-    if which == "mass":
-        return dijet.mass
-    if which == "pt":
-        return dijet.pt
-    if which == "eta":
-        return dijet.eta
-    if which == "abs_eta":
-        return abs(dijet.eta)
-    if which == "phi":
-        return dijet.phi
-    if which == "energy":
-        return dijet.energy
-    raise ValueError(f"Unknown which: {which}")
-
-
-def build_hh(events, which=None):
-    dijet = build_dibjet(events)
-    dilep = build_dilep(events)
-    hs = ak.concatenate([dijet[..., None], dilep[..., None]], axis=1)
-    if which == "dr":
-        return delta_r12(hs)
-    hh = hs.sum(axis=1)
-    if which is None:
-        return hh * 1
-    if which == "mass":
-        return hh.mass
-    if which == "pt":
-        return hh.pt
-    if which == "eta":
-        return hh.eta
-    if which == "abs_eta":
-        return abs(hh.eta)
-    if which == "phi":
-        return hh.phi
-    if which == "energy":
-        return hh.energy
-    raise ValueError(f"Unknown which: {which}")
-
-
 def build_m4l(events):
     objects = ak.concatenate([events.Electron * 1, events.Muon * 1], axis=1)[:, :]
     objects_sum = objects.sum(axis=1)
@@ -121,8 +74,6 @@ def add_variables(config: od.Config) -> None:
     """
     build_ht.inputs = ["{Electron,Muon,Tau,Jet}.{pt,eta,phi,mass}"]
     build_dilep.inputs = ["{Electron,Muon,Tau}.{pt,eta,phi,mass}"]
-    build_dibjet.inputs = ["HHBJet.{pt,eta,phi,mass}"]
-    build_hh.inputs = build_dibjet.inputs + build_dilep.inputs
     build_m4l.inputs = ["{Electron,Muon}.{pt,eta,phi,mass}"]
     build_nbjets.inputs = ["Jet.{btagPNetB,btagDeepFlavB}"]
     
@@ -308,58 +259,6 @@ def add_variables(config: od.Config) -> None:
         unit="GeV",
         x_title=r"Subleading jet $p_{T}$",
     )
-    # dibjet variables
-    add_variable(
-        config,
-        name="dibjet_energy",
-        expression=partial(build_dibjet, which="energy"),
-        aux={"inputs": build_dibjet.inputs},
-        binning=(40, 40, 300),
-        unit="GeV",
-        x_title=r"$E_{bb}$",
-    )
-    add_variable(
-        config,
-        name="dibjet_mass",
-        expression=partial(build_dibjet, which="mass"),
-        aux={"inputs": build_dibjet.inputs},
-        binning=(30, 0, 300),
-        unit="GeV",
-        x_title=r"$m_{bb}$",
-    )
-    add_variable(
-        config,
-        name="dibjet_pt",
-        expression=partial(build_dibjet, which="pt"),
-        aux={"inputs": build_dibjet.inputs},
-        binning=(40, 0, 200),
-        unit="GeV",
-        x_title=r"$p_{T,bb}$",
-    )
-    add_variable(
-        config,
-        name="dibjet_eta",
-        expression=partial(build_dibjet, which="eta"),
-        aux={"inputs": build_dibjet.inputs},
-        binning=(50, -5, 5),
-        x_title=r"$\eta_{bb}$",
-    )
-    add_variable(
-        config,
-        name="dibjet_phi",
-        expression=partial(build_dibjet, which="phi"),
-        aux={"inputs": build_dibjet.inputs},
-        binning=(66, -3.3, 3.3),
-        x_title=r"$\phi_{bb}$",
-    )
-    add_variable(
-        config,
-        name="dibjet_dr",
-        expression=partial(build_dibjet, which="dr"),
-        aux={"inputs": build_dibjet.inputs},
-        binning=(30, 0, 6),
-        x_title=r"$\Delta R_{bb}$",
-    )
     add_variable(
         config,
         name="nbjets_deepjet_medium",
@@ -450,61 +349,6 @@ def add_variables(config: od.Config) -> None:
         binning=(30, 0, 6),
         x_title=r"$\Delta R_{ll}$",
     )
-    # hh variables
-    add_variable(
-        config,
-        name="hh_energy",
-        expression=partial(build_hh, which="energy"),
-        aux={"inputs": build_hh.inputs},
-        binning=(35, 100, 800),
-        unit="GeV",
-        x_title=r"$E_{ll+bb}$",
-    )
-    add_variable(
-        config,
-        name="hh_mass",
-        expression=partial(build_hh, which="mass"),
-        aux={"inputs": build_hh.inputs},
-        binning=(50, 0, 1000),
-        unit="GeV",
-        x_title=r"$m_{ll+bb}$",
-    )
-    add_variable(
-        config,
-        name="hh_pt",
-        expression=partial(build_hh, which="pt"),
-        aux={"inputs": build_hh.inputs},
-        binning=(40, 0, 400),
-        unit="GeV",
-        x_title=r"$p_{T,ll+bb}$",
-    )
-    add_variable(
-        config,
-        name="hh_eta",
-        expression=partial(build_hh, which="eta"),
-        aux={"inputs": build_hh.inputs},
-        binning=(50, -5, 5),
-        unit="GeV",
-        x_title=r"$\eta_{ll+bb}$",
-    )
-    add_variable(
-        config,
-        name="hh_phi",
-        expression=partial(build_hh, which="phi"),
-        aux={"inputs": build_hh.inputs},
-        binning=(66, -3.3, 3.3),
-        unit="GeV",
-        x_title=r"$\phi_{ll+bb}$",
-    )
-    add_variable(
-        config,
-        name="hh_dr",
-        expression=partial(build_hh, which="dr"),
-        aux={"inputs": build_hh.inputs},
-        binning=(30, 0, 6),
-        x_title=r"$\Delta R_{ll,bb}$",
-    )
-
     # single lepton variables
     # single electron
     add_variable(
