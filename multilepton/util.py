@@ -125,11 +125,11 @@ def RAW_MET_COLUMN(self: ArrayFunction.DeferredColumn, func: ArrayFunction) -> A
 
 
 def hash_events(arr: np.ndarray) -> np.ndarray:
-    import awkward as ak
     """
     Helper function to create a hash value from the event, run and luminosityBlock columns.
     The values are padded to specific lengths and concatenated to a single integer.
     """
+    import awkward as ak
     def assert_value(arr: np.ndarray, field: str, max_value: int) -> None:
         """
         Helper function to check if a column does not exceed a maximum value.

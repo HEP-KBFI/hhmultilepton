@@ -1,5 +1,5 @@
 law run cf.PlotVariables1D \
-    --version testnanov15_2024__ver2 \
+    --version testnanov15_2024__ver3 \
     --producers default \
     --variables nmu \
     --datasets qcd_mu_pt15to20_pythia \
