@@ -88,55 +88,26 @@ datasets:
       periods: [c, d, e, f, g, h, i]
 
   signal:
+    resonant:
+      tag: ["resonant_signal", "signal"]
+      cmsdb: [] # not available yet
+    
     nonresonant:
       ggf:
         tag: ["ggf", "nonresonant_signal", "signal"]
         cmsdb:
-          - hh_ggf_hbb_htt_kl1_kt1_powheg
-          - hh_ggf_hbb_htt_kl0_kt1_powheg
-          - hh_ggf_hbb_htt_kl2p45_kt1_powheg
-          - hh_ggf_hbb_htt_kl5_kt1_powheg
-          - hh_ggf_hbb_htt_kl0_kt1_c21_powheg
-          - hh_ggf_hbb_htt_kl1_kt1_c23_powheg
-          - hh_ggf_htt_hvv_kl1_kt1_powheg
           - hh_ggf_htt_hvv_kl0_kt1_powheg
+          - hh_ggf_htt_hvv_kl1_kt1_powheg
           - hh_ggf_htt_hvv_kl5_kt1_powheg
-          - hh_ggf_hvv_hvv_kl1_kt1_powheg
+          - hh_ggf_htt_htt_kl0_kt1_powheg
+          - hh_ggf_htt_htt_kl1_kt1_powheg
+          - hh_ggf_htt_htt_kl5_kt1_powheg
           - hh_ggf_hvv_hvv_kl0_kt1_powheg
+          - hh_ggf_hvv_hvv_kl1_kt1_powheg
           - hh_ggf_hvv_hvv_kl5_kt1_powheg
       vbf:
         tag: ["vbf", "nonresonant_signal", "signal"]
         cmsdb:
-          - hh_vbf_hbb_htt_kv1_k2v1_kl1_madgraph
-          - hh_vbf_hbb_htt_kv1_k2v0_kl1_madgraph
-          - hh_vbf_hbb_htt_kv1_k2v1_kl2_madgraph
-          - hh_vbf_hbb_htt_kv1_k2v2_kl1_madgraph
-          - hh_vbf_hbb_htt_kv1p74_k2v1p37_kl14p4_madgraph
-          - hh_vbf_hbb_htt_kvm0p012_k2v0p03_kl10p2_madgraph
-          - hh_vbf_hbb_htt_kvm0p758_k2v1p44_klm19p3_madgraph
-          - hh_vbf_hbb_htt_kvm0p962_k2v0p959_klm1p43_madgraph
-          - hh_vbf_hbb_htt_kvm1p21_k2v1p94_klm0p94_madgraph
-          - hh_vbf_hbb_htt_kvm1p6_k2v2p72_klm1p36_madgraph
-          - hh_vbf_hbb_htt_kvm1p83_k2v3p57_klm3p39_madgraph
-          - hh_vbf_hbb_htt_kvm2p12_k2v3p87_klm5p96_madgraph
-          - hh_vbf_htt_htt_kv1_k2v1_kl1_madgraph
-          - hh_vbf_htt_htt_kv1_k2v0_kl1_madgraph
-          - hh_vbf_htt_htt_kv1p74_k2v1p37_madgraph
-          - hh_vbf_htt_htt_kvm0p012_k2v0p03_madgraph
-          - hh_vbf_htt_htt_kvm0p758_k2v1p44_madgraph
-          - hh_vbf_htt_htt_kvm0p962_k2v0p959_madgraph
-          - hh_vbf_htt_htt_kvm1p21_k2v1p94_madgraph
-          - hh_vbf_htt_htt_kvm1p6_k2v2p72_madgraph
-          - hh_vbf_htt_htt_kvm1p83_k2v3p57_madgraph
-          - hh_vbf_htt_htt_kvm2p12_k2v3p87_madgraph
-          - hh_vbf_htt_htt_kv1p74_k2v1p37_kl14p4_madgraph
-          - hh_vbf_htt_htt_kvm0p012_k2v0p03_kl10p2_madgraph
-          - hh_vbf_htt_htt_kvm0p758_k2v1p44_klm19p3_madgraph
-          - hh_vbf_htt_htt_kvm0p962_k2v0p959_klm1p43_madgraph
-          - hh_vbf_htt_htt_kvm1p21_k2v1p94_klm0p94_madgraph
-          - hh_vbf_htt_htt_kvm1p6_k2v2p72_klm1p36_madgraph
-          - hh_vbf_htt_htt_kvm1p83_k2v3p57_klm3p39_madgraph
-          - hh_vbf_htt_htt_kvm2p12_k2v3p87_klm5p96_madgraph
           - hh_vbf_htt_hvv_kv1_k2v1_kl1_madgraph
           - hh_vbf_htt_hvv_kv1_k2v0_kl1_madgraph
           - hh_vbf_htt_hvv_kv1p74_k2v1p37_madgraph
@@ -155,6 +126,24 @@ datasets:
           - hh_vbf_htt_hvv_kvm1p6_k2v2p72_klm1p36_madgraph
           - hh_vbf_htt_hvv_kvm1p83_k2v3p57_klm3p39_madgraph
           - hh_vbf_htt_hvv_kvm2p12_k2v3p87_klm5p96_madgraph
+          - hh_vbf_htt_htt_kv1_k2v1_kl1_madgraph
+          - hh_vbf_htt_htt_kv1_k2v0_kl1_madgraph
+          - hh_vbf_htt_htt_kv1p74_k2v1p37_madgraph
+          - hh_vbf_htt_htt_kvm0p012_k2v0p03_madgraph
+          - hh_vbf_htt_htt_kvm0p758_k2v1p44_madgraph
+          - hh_vbf_htt_htt_kvm0p962_k2v0p959_madgraph
+          - hh_vbf_htt_htt_kvm1p21_k2v1p94_madgraph
+          - hh_vbf_htt_htt_kvm1p6_k2v2p72_madgraph
+          - hh_vbf_htt_htt_kvm1p83_k2v3p57_madgraph
+          - hh_vbf_htt_htt_kvm2p12_k2v3p87_madgraph
+          - hh_vbf_htt_htt_kv1p74_k2v1p37_kl14p4_madgraph
+          - hh_vbf_htt_htt_kvm0p012_k2v0p03_kl10p2_madgraph
+          - hh_vbf_htt_htt_kvm0p758_k2v1p44_klm19p3_madgraph
+          - hh_vbf_htt_htt_kvm0p962_k2v0p959_klm1p43_madgraph
+          - hh_vbf_htt_htt_kvm1p21_k2v1p94_klm0p94_madgraph
+          - hh_vbf_htt_htt_kvm1p6_k2v2p72_klm1p36_madgraph
+          - hh_vbf_htt_htt_kvm1p83_k2v3p57_klm3p39_madgraph
+          - hh_vbf_htt_htt_kvm2p12_k2v3p87_klm5p96_madgraph
           - hh_vbf_hvv_hvv_kv1_k2v1_kl1_madgraph
           - hh_vbf_hvv_hvv_kv1_k2v0_kl1_madgraph
           - hh_vbf_hvv_hvv_kv1p74_k2v1p37_madgraph
@@ -173,13 +162,6 @@ datasets:
           - hh_vbf_hvv_hvv_kvm1p6_k2v2p72_klm1p36_madgraph
           - hh_vbf_hvv_hvv_kvm1p83_k2v3p57_klm3p39_madgraph
           - hh_vbf_hvv_hvv_kvm2p12_k2v3p87_klm5p96_madgraph
-      resonant:
-        tag: ["resonant_signal", "signal"]
-        cmsdb:
-          - radion_hh_ggf_hbb_htt_m450_madgraph
-          - radion_hh_ggf_hbb_htt_m1200_madgraph
-          - graviton_hh_ggf_hbb_htt_m450_madgraph
-          - graviton_hh_ggf_hbb_htt_m1200_madgraph
 
   background:
     ttbar:
@@ -191,24 +173,21 @@ datasets:
     single_top:
       tag: ["has_top", "single_top", "st"]
       cmsdb: 
-          - st_tchannel_t_4f_powheg
-          - st_tchannel_tbar_4f_powheg
-          - st_twchannel_t_sl_powheg
-          - st_twchannel_tbar_sl_powheg
-          - st_schannel_t_lep_4f_amcatnlo
-          - st_schannel_tbar_lep_4f_amcatnlo
+        - st_tchannel_t_4f_powheg
+        - st_tchannel_tbar_4f_powheg
+        - st_twchannel_t_sl_powheg
+        - st_twchannel_tbar_sl_powheg
+        - st_schannel_t_lep_4f_amcatnlo
+        - st_schannel_tbar_lep_4f_amcatnlo
     ttv: 
       tag: ["ttbar", "tt"]
       cmsdb: 
-        - ttw_wlnu_amcatnlo
+        - ttzz_madgraph
         - ttz_zqq_amcatnlo
         - ttz_zll_m4to50_amcatnlo
         - ttz_zll_m50toinf_amcatnlo
-    ttvv:
-      tag: ["ttbar", "tt"]
-      cmsdb: 
         - ttww_madgraph
-        - ttzz_madgraph
+        - ttw_wlnu_amcatnlo
     dy:
       tag: ["dy"]
       cmsdb: 
@@ -280,19 +259,10 @@ datasets:
         - qcd_em_pt120to170_pythia
         - qcd_em_pt170to300_pythia
         - qcd_em_pt300toinf_pythia
-    diboson: 
+    zz: 
       tag: ["no_lhe_weights"]
       cmsdb:
         - zz_pythia
-        - wz_pythia
-        - ww_pythia
-    triboson: 
-      tag: 
-      cmsdb:
-        - www_4f_amcatnlo
-        - wwz_4f_amcatnlo
-        - wzz_amcatnlo
-        - zzz_amcatnlo
     single_higgs:
       tag:
       cmsdb:
@@ -300,12 +270,12 @@ datasets:
         - h_ggf_hbb_powheg
         - h_vbf_htt_powheg
         - h_vbf_hbb_powheg
-        - wmh_wlnu_hbb_powheg
-        - wph_wlnu_hbb_powheg
         - wph_htt_powheg
         - wmh_htt_powheg
         - wph_wqq_hbb_powheg
         - wmh_wqq_hbb_powheg
+        - wph_wlnu_hbb_powheg
+        - wmh_wlnu_hbb_powheg
         - zh_zll_hbb_powheg
         - zh_zqq_hbb_powheg
         - zh_htt_powheg
@@ -314,13 +284,24 @@ datasets:
         - zh_gg_znunu_hbb_powheg
         - tth_hbb_powheg
         - tth_hnonbb_powheg
+    vvv: 
+      tag: 
+      cmsdb:
+        - www_4f_amcatnlo
+        - wwz_4f_amcatnlo
+        - wzz_amcatnlo
+        - zzz_amcatnlo
+    others: 
+      tag: 
+      cmsdb:
+        - wz_pythia
+        - ww_pythia
  
   
 external_files:
   pog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG"
   hh_btag_repo: "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz"
   trigger: "https://gitlab.cern.ch/cclubbtautau/AnalysisCore/-/archive/59ae66c4a39d3e54afad5733895c33b1fb511c47/AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47.tar.gz"  # noqa: E50
-
 
 channels:
   etau:

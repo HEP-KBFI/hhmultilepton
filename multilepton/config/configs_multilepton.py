@@ -528,6 +528,14 @@ def add_config(
         ]
         return cfg
 
+    def get_datasets_by_tag(tag):
+        """Return converted dataset processes matching a given tag."""
+        return [
+            convert_dataset_to_process(dataset.name, campaign, all_processes_from_campaign)
+            for dataset in cfg.datasets
+            if dataset.has_tag(tag)
+        ]
+
     def add_external(name, value):
         if isinstance(value, dict):
             value = DotDict.wrap(value)
@@ -550,42 +558,28 @@ def add_config(
             (kwargs.get('nano') is None or campaign.x.version in law.util.make_set(kwargs.get('nano')))
         )
 
-    def if_era(values=None, **kwargs):
+    def in_era(values=None, **kwargs):
         """
         Return a filtered list of values if the current era matches, 
         or an empty list otherwise.
-        Works naturally with `not in_era(...)`.
         """
         return list(filter(bool, values or [])) if find_match_era(**kwargs) else []
     
-    def if_not_era(**kwargs):
-        return not in_era(in_config(**kwargs))
+    def not_in_era(**kwargs):
+        return not bool(in_era(**kwargs))
  
-    def if_config(names, ids, values):
+    def in_config(names=None, ids=None, values=None):
         """
         Return a filtered list of values if cfg.id is in the provided ids,
+        or cfg.name in the provided names
         or an empty list otherwise.
-        Works naturally with `not in_config_id(...)`.
         """
-        if names: return list(filter(bool, values or [])) if cfg.name in ids else []
+        if names: return list(filter(bool, values or [])) if cfg.name in names else []
         elif ids: return list(filter(bool, values or [])) if cfg.id in ids else []
     
-    def if__config(**kwargs):
+    def not_in_config(**kwargs):
         return not bool(in_config(**kwargs))
             
-
-    def if_era(values=None, **kwargs):
-        return list(filter(bool, values or [])) if find_match_era(**kwargs) else []
-
-    def if_not_era(values=None, **kwargs):
-        return list(filter(bool, values or [])) if not find_match_era(**kwargs) else []
-
-    def if_in_config_id(ids, values):
-        return list(filter(bool, values or [])) if cfg.id in ids else []
-
-    def if_not_in_config_id(ids, values):
-        return list(filter(bool, values or [])) if cfg.id not in ids else [] 
-    
     #=============================================
     # configure some default objects
     #=============================================
@@ -597,7 +591,7 @@ def add_config(
     cfg.x.default_ml_model = None
     cfg.x.default_inference_model = "default_no_shifts"
     cfg.x.default_categories = ("all",)
-    cfg.x.default_variables = ("njet", "nbtag", "res_pdnn_hh", "res_dnn_hh")
+    cfg.x.default_variables = ("njet", "nlep")
     cfg.x.default_hist_producer = "default"
     cfg.x.external_files = DotDict() 
     
@@ -627,9 +621,9 @@ def add_config(
         for dataset_name in analysis_cfg.get_process_list(dtype):
             tags = []
             proc, id = convert_dataset_to_process(dataset_name, campaign, all_processes_from_campaign)
-            #print( 'working on ....', dataset_name , proc, id, campaign.has_dataset(dataset_name))
             if id is None or not campaign.has_dataset(dataset_name):
                 continue
+            #print( 'working on ....', dataset_name , proc, id, campaign.has_dataset(dataset_name))
             dataset_names.append(dataset_name)
             cfg.add_process(proc, id)
             dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
@@ -644,6 +638,13 @@ def add_config(
                 dataset.add_tag("dy_stitched")
             if re.match(r"^w_lnu_\dj_(|pt.+_)amcatnlo$", dataset.name):
                 dataset.add_tag("w_lnu_stitched")
+            for sig in ['ggf', 'vbf']:
+                if dataset.name.startswith(f'hh_{sig}_htt_htt'):
+                    dataset.add_tag(f"{sig}_4t")
+                elif dataset.name.startswith(f'hh_{sig}_htt_hvv'):
+                    dataset.add_tag(f"{sig}_2t2v")
+                elif dataset.name.startswith(f'hh_{sig}_hvv_hvv'):
+                    dataset.add_tag(f"{sig}_4v")
             # datasets that are allowed to contain some events with missing lhe infos
             # (known to happen for amcatnlo)
             if dataset.name.endswith("_amcatnlo") or re.match(r"^z_vbf_.*madgraph$", dataset.name):
@@ -671,20 +672,15 @@ def add_config(
     
             for tag, tag_cfg in tag_block.items():
                 periods = tag_cfg["periods"]
-    
                 requested_data = [
-                    *if_not_in_config_id(
-                        ids=[5012, 6012, 7012, 8012],
-                        values=[
-                            *if_era(
+                            *in_era(
                                 year=y,
                                 **({"tag": tag} if tag else {}),
                                 values=[
                                     f"data_{stream}_{period}"
                                     for stream in streams
                                     for period in periods],
-                                    )],
-                                )]
+                                    )]
                 dataset_names += requested_data 
                 for dataset_name in requested_data:
                     dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
@@ -709,18 +705,27 @@ def add_config(
  
     # process groups for conveniently looping over certain processs
     # (used in wrapper_factory and during plotting)
-    # I think the goal of this code here is to use 2 signals only
-    # ask Torben or Matheus otherwise add all signals from  yaml #FIXME
+    decays = ["4v", "4t", "2t2v"]
+    productions = ["ggf", "vbf"]
+    nonresonant_signal_groups = {
+        f"{prod}_{decay}": get_datasets_by_tag(f"{prod}_{decay}")
+        for prod in productions
+        for decay in decays
+    }
+
     cfg.x.process_groups = {
-        "signals": ["hh_ggf_hbb_htt_kl1_kt1","hh_vbf_hbb_htt_kv1_k2v1_kl1",],
-        "signals_ggf": analysis_data['datasets']['signal']['nonresonant']['ggf']['cmsdb'],
-        "backgrounds": (backgrounds := analysis_data['datasets']['background'].keys()),
-        "dy_split": analysis_data['datasets']['background']['dy']['cmsdb'],
-        "dy_split_no_incl": analysis_data['datasets']['background']['dy']['cmsdb'],
-        "sm_ggf": (sm_ggf_group := ["hh_ggf_hbb_htt_kl1_kt1", *backgrounds]),
-        "sm": (sm_group := ["hh_ggf_hbb_htt_kl1_kt1", "hh_vbf_hbb_htt_kv1_k2v1_kl1", *backgrounds]),
-        "sm_ggf_data": ["data"] + sm_ggf_group,
-        "sm_data": ["data"] + sm_group,
+        "nonresonant_ggf": (nonresonant_ggf := analysis_data['datasets']['signal']['nonresonant']['ggf']['cmsdb']),
+        "nonresonant_vbf": (nonresonant_vbf := analysis_data['datasets']['signal']['nonresonant']['vbf']['cmsdb']),
+        "nonresonant": [*nonresonant_ggf, *nonresonant_vbf],
+        "resonant": (resonant := analysis_data['datasets']['signal']['resonant']['cmsdb']),
+        "signal": (all_signals := [*resonant, *nonresonant_vbf, *nonresonant_ggf]),
+        "backgrounds": (all_backgrounds := analysis_data['datasets']['background'].keys()),
+        # decay channel for all modes
+         **nonresonant_signal_groups,
+        # decay modes merged for productions 
+        "4v": [*nonresonant_signal_groups["ggf_4v"], *nonresonant_signal_groups["vbf_4v"]],
+        "4t": [*nonresonant_signal_groups["ggf_4t"], *nonresonant_signal_groups["vbf_4t"]],
+        "2t2v": [*nonresonant_signal_groups["ggf_2t2v"], *nonresonant_signal_groups["vbf_2t2v"]],
     }
 
     # define inclusive datasets for the stitched process identification with corresponding leaf processes
@@ -735,7 +740,6 @@ def add_config(
     cfg.x.dataset_groups = {
         "data": (data_group := [dataset.name for dataset in cfg.datasets if dataset.is_data]),
         "backgrounds": (backgrounds := [
-            # ! this "mindlessly" includes all non-signal MC datasets from above
             dataset.name for dataset in cfg.datasets
             if dataset.is_mc and not dataset.has_tag("signal")
         ]),
@@ -747,23 +751,6 @@ def add_config(
                 not dataset.has_tag({"dy_stitched", "w_lnu_stitched"}, mode=any)
             )
         ]),
-        "sm_ggf": (sm_ggf_group := ["hh_ggf_hbb_htt_kl1_kt1_powheg", *backgrounds]),
-        "sm": (sm_group := [
-            "hh_ggf_hbb_htt_kl1_kt1_powheg",
-            "hh_vbf_hbb_htt_kv1_k2v1_kl1_madgraph",
-            *backgrounds,
-        ],
-        ),
-        "sm_unstitched": (sm_group_unstitched := [
-            "hh_ggf_hbb_htt_kl1_kt1_powheg",
-            "hh_vbf_hbb_htt_kv1_k2v1_kl1_madgraph",
-            *backgrounds_unstitched,
-        ]),
-        "sm_ggf_data": data_group + sm_ggf_group,
-        "sm_data": data_group + sm_group,
-        "sm_data_unstitched": data_group + sm_group_unstitched,
-        "dy": [dataset.name for dataset in cfg.datasets if dataset.has_tag("dy")],
-        "w_lnu": [dataset.name for dataset in cfg.datasets if dataset.has_tag("w_lnu")],
     }
 
     # category groups for conveniently looping over certain categories
@@ -1080,42 +1067,6 @@ def add_config(
         add_external("electron_ss", (localizePOGSF(year, "EGM", f"electronSS_EtDependent{ver}.json.gz"), "v1"))
         add_external("jet_id", (localizePOGSF(year, "JME", "jetid.json.gz"), "v1"))
         
-    # FIXME to remove    
-    #if run == 3:
-    #    # hh-btag repository with TF saved model directories trained on Run2 UL samples
-    #    add_external("hh_btag_repo", Ext(
-    #        "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
-    #        subpaths=DotDict(even="hh-btag-master/models/HHbtag_v2_par_0", odd="hh-btag-master/models/HHbtag_v2_par_1"),  # noqa: E501
-    #        version="v2",
-    #    ))
-    #
-    #elif run == 3:
-    #    # hh-btag repository with TF saved model directories trained on 22+23 samples using pnet
-    #    add_external("hh_btag_repo", Ext(
-    #        "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz",
-    #        subpaths=DotDict(even="hh-btag-master/models/HHbtag_v3_par_0", odd="hh-btag-master/models/HHbtag_v3_par_1"),  # noqa: E501
-    #        version="v3",
-    #    ))
-    #    # dy weight and recoil corrections
-    #    add_external("dy_weight_sf", ("/afs/cern.ch/work/m/mrieger/public/mirrors/external_files/DY_pTll_weights_v2.json.gz", "v1"))  # noqa: E501
-    #    add_external("dy_recoil_sf", ("/afs/cern.ch/work/m/mrieger/public/mirrors/external_files/Recoil_corrections_v2.json.gz", "v1"))  # noqa: E501
-    #    
-    #    if year !=2024:
-    #        # trigger scale factors
-    #        trigger_sf_internal_subpath = "AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47/data/TriggerScaleFactors"
-    #        add_external("trigger_sf", Ext(
-    #            triggerFile,
-    #            subpaths=DotDict(
-    #                muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/temporary_MuHlt_abseta_pt.json",
-    #                cross_muon=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossMuTauHlt.json",
-    #                electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/electronHlt.json",
-    #                cross_electron=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/CrossEleTauHlt.json",
-    #                tau=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/tau_trigger_DeepTau2018v2p5_{year}{tau_pog_suffix}.json",
-    #                jet=f"{trigger_sf_internal_subpath}/{year}{campaign_tag}/ditaujet_jetleg_SFs_{campaign_tag}.json",
-    #            ),
-    #            version="v1",
-    #        ))
-
     #=============================================
     # reductions
     #=============================================
