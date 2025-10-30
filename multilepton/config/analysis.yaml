@@ -90,11 +90,13 @@ datasets:
   signal:
     resonant:
       tag: ["resonant_signal", "signal"]
+      color: "#011c87" # dark_blue
       cmsdb: [] # not available yet
     
     nonresonant:
       ggf:
         tag: ["ggf", "nonresonant_signal", "signal"]
+        color: "#269c00" # dark_green
         cmsdb:
           - hh_ggf_htt_hvv_kl0_kt1_powheg
           - hh_ggf_htt_hvv_kl1_kt1_powheg
@@ -107,6 +109,7 @@ datasets:
           - hh_ggf_hvv_hvv_kl5_kt1_powheg
       vbf:
         tag: ["vbf", "nonresonant_signal", "signal"]
+        color: "#e76300" # dark_orange
         cmsdb:
           - hh_vbf_htt_hvv_kv1_k2v1_kl1_madgraph
           - hh_vbf_htt_hvv_kv1_k2v0_kl1_madgraph
@@ -166,12 +169,16 @@ datasets:
   background:
     ttbar:
       tag: ["has_top", "ttbar", "tt"]
+      color: "#ffa90e"  # bright_orange
+      label: 
       cmsdb: 
         - tt_sl_powheg
         - tt_dl_powheg
         - tt_fh_powheg
     single_top:
       tag: ["has_top", "single_top", "st"]
+      color: "#832db6" # purpule
+      label: 
       cmsdb: 
         - st_tchannel_t_4f_powheg
         - st_tchannel_tbar_4f_powheg
@@ -181,6 +188,8 @@ datasets:
         - st_schannel_tbar_lep_4f_amcatnlo
     ttv: 
       tag: ["ttbar", "tt"]
+      color: "#94a4a2" # grey
+      label: 
       cmsdb: 
         - ttzz_madgraph
         - ttz_zqq_amcatnlo
@@ -190,6 +199,8 @@ datasets:
         - ttw_wlnu_amcatnlo
     dy:
       tag: ["dy"]
+      color: "#3f90da" # bright_blue
+      label: 
       cmsdb: 
         - dy_m4to10_amcatnlo
         - dy_m10to50_amcatnlo
@@ -209,6 +220,8 @@ datasets:
         - dy_m50toinf_2j_pt600toinf_amcatnlo
     wjets: 
       tag: ["w_lnu"]
+      color: "#964a8b" #aubergine
+      label: 
       cmsdb: 
         - w_lnu_amcatnlo
         - w_lnu_0j_amcatnlo
@@ -226,19 +239,10 @@ datasets:
         - w_lnu_2j_pt600toinf_amcatnlo
         - w_vbf_wlnu_madgraph
         - z_vbf_zll_m50toinf_madgraph
-  #    zqq: # negligible  drop for now  
-  #      tag:
-  #      cmsdb: 
-  #        - z_qq_1j_pt100to200_amcatnlo
-  #        - z_qq1j_pt200to400_amcatnlo
-  #        - z_qq1j_pt400to600_amcatnlo
-  #        - z_qq1j_pt600toinf_amcatnlo
-  #        - z_qq2j_pt100to200_amcatnlo
-  #        - z_qq2j_pt200to400_amcatnlo
-  #        - z_qq2j_pt400to600_amcatnlo
-  #        - z_qq2j_pt600toinf_amcatnlo
     qcd:
       tag:
+      color: "#bd1f01" # red
+      label: 
       cmsdb:
         - qcd_mu_pt15to20_pythia
         - qcd_mu_pt20to30_pythia
@@ -261,10 +265,13 @@ datasets:
         - qcd_em_pt300toinf_pythia
     zz: 
       tag: ["no_lhe_weights"]
+      color: "#f7c331" # yellow
       cmsdb:
         - zz_pythia
     single_higgs:
-      tag:
+      tag: ["h"]
+      color: "#92dadd" # teal
+      label: 
       cmsdb:
         - h_ggf_htt_powheg
         - h_ggf_hbb_powheg
@@ -286,6 +293,8 @@ datasets:
         - tth_hnonbb_powheg
     vvv: 
       tag: 
+      color: "#a96b59" # brown 
+      label: 
       cmsdb:
         - www_4f_amcatnlo
         - wwz_4f_amcatnlo
@@ -293,9 +302,20 @@ datasets:
         - zzz_amcatnlo
     others: 
       tag: 
+      color: "#30c300" # green
+      label: 
       cmsdb:
         - wz_pythia
         - ww_pythia
+## negligible  drop for now  
+#      - z_qq_1j_pt100to200_amcatnlo
+#      - z_qq1j_pt200to400_amcatnlo
+#      - z_qq1j_pt400to600_amcatnlo
+#      - z_qq1j_pt600toinf_amcatnlo
+#      - z_qq2j_pt100to200_amcatnlo
+#      - z_qq2j_pt200to400_amcatnlo
+#      - z_qq2j_pt400to600_amcatnlo
+#      - z_qq2j_pt600toinf_amcatnlo
  
   
 external_files:
@@ -314,6 +334,50 @@ channels:
     id: 3
     label: "$\\tau_{h}\\tau_{h}$"
     # ... other channels
+
+plot_defaults:
+  general:
+    cms_label: "Work-in-progress"
+    whitespace_fraction: 0.31
+  default_style: wide_legend
+  blinding_threshold: 0
+  
+  styles:
+    default:
+      gridspec_cfg:
+        height_ratios: [3, 0.9]
+      rax_cfg:
+        yloc: center
+      legend_cfg:
+        borderpad: 0
+        borderaxespad: 1.2
+        columnspacing: 1.8
+        labelspacing: 0.28
+        fontsize: 16
+        cf_line_breaks: true
+        cf_short_labels: false
+      annotate_cfg:
+        fontsize: 18
+        style: italic
+        xycoords: "axes fraction"
+        xy: [0.035, 0.955]
+    
+    wide_legend:
+      inherit: default
+      legend_cfg:
+        ncols: 3
+        loc: upper left
+        cf_short_labels: true
+      annotate_cfg:
+        xy: [0.035, 0.765]
+
+    wide_ext_legend:
+      inherit: wide_legend
+      legend_cfg:
+        cf_short_labels: false
+      annotate_cfg:
+        xy: [0.035, 0.750]
+
 
 # (names derived from contents in BTV correctionlib file)
 btag_sf_jec_sources:

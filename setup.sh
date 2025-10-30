@@ -27,7 +27,6 @@ setup_multilepton() {
     #
     # load cf setup helpers
     #
-
     local shell_is_zsh="$( [ -z "${ZSH_VERSION}" ] && echo "false" || echo "true" )"
     local this_file="$( ${shell_is_zsh} && echo "${(%):-%x}" || echo "${BASH_SOURCE[0]}" )"
     local this_dir="$( cd "$( dirname "${this_file}" )" && pwd )"
@@ -76,6 +75,8 @@ setup_multilepton() {
     export CF_SETUP_NAME="${setup_name}"
     export CF_SCHEDULER_HOST="${CF_SCHEDULER_HOST:-naf-cms14.desy.de}"
     export CF_SCHEDULER_PORT="${CF_SCHEDULER_PORT:-8088}"
+    export CF_INTERACTIVE_VENV_FILE="${CF_INTERACTIVE_VENV_FILE:-${MULTILEPTON_BASE}/sandboxes/venv_multilepton_dev.sh}"
+    [ ! -z "${CF_INTERACTIVE_VENV_FILE}" ] && export CF_INSPECT_SANDBOX="$( basename "${CF_INTERACTIVE_VENV_FILE%.*}" )"
     # default job flavor settings (starting with naf / maxwell cluster defaults)
     # used by law.cfg and, in turn, tasks/framework/remote.py
     local cf_htcondor_flavor_default="cern_el9"
@@ -134,13 +135,6 @@ setup_multilepton() {
     #
     # additional common cf setup steps
     #
-    if ! (micromamba env export | grep -q correctionlib); then
-    echo correctionlib misisng, installing...
-    micromamba install \
-        correctionlib==2.6.4 \
-        || return "$?"
-    micromamba clean --yes --all
-    fi
     cf_setup_post_install || return "$?"
 
     # update the law config file to switch from mirrored to bare wlcg targets

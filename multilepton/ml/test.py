@@ -18,12 +18,10 @@ from columnflow.columnar_util import Route, set_ak_column
 
 np = maybe_import("numpy")
 ak = maybe_import("awkward")
-
 law.contrib.load("tensorflow")
 
 
 class TestModel(MLModel):
-
     def setup(self):
         # dynamically add variables for the quantities produced by this model
         if f"{self.cls_name}.kl" not in self.config_inst.variables:
@@ -35,7 +33,7 @@ class TestModel(MLModel):
             )
 
     def sandbox(self, task: law.Task) -> str:
-        return dev_sandbox("bash::$MULTILEPTON_BASE/sandboxes/venv_columnar_tf.sh")
+        return dev_sandbox("bash::$MULTILEPTON_BASE/sandboxes/venv_multilepton.sh")
 
     def datasets(self, config_inst: od.Config) -> set[od.Dataset]:
         return {
@@ -105,7 +103,6 @@ class TestModel(MLModel):
         events = set_ak_column(events, f"{self.cls_name}.kl", 0.5, value_type=np.float32)
 
         return events
-
 
 # usable derivations
 test_model = TestModel.derive("test_model", cls_dict={"folds": 2})

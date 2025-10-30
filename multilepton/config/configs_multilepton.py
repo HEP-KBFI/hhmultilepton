@@ -13,7 +13,6 @@ import functools
 import yaml
 import law
 import json
-import correctionlib
 
 import order as od
 
@@ -21,9 +20,11 @@ from collections import defaultdict
 from scinum import Number
 
 from columnflow.tasks.external import ExternalFile as Ext
-from columnflow.util import DotDict, dev_sandbox
+from columnflow.util import DotDict, dev_sandbox, load_correction_set
 from columnflow.columnar_util import ColumnCollection, skip_column
-from columnflow.production.cms.top_pt_weight import TopPtWeightConfig
+from columnflow.config_util import get_root_processes_from_campaign, get_shifts_from_sources
+from columnflow.config_util import add_shift_aliases, verify_config_processes 
+from columnflow.production.cms.top_pt_weight import TopPtWeightFromTheoryConfig, TopPtWeightFromDataConfig
 from columnflow.production.cms.dy import DrellYanConfig
 from columnflow.production.cms.btag import BTagSFConfig
 from columnflow.production.cms.jet import JetIdConfig
@@ -31,8 +32,7 @@ from columnflow.production.cms.electron import ElectronSFConfig
 from columnflow.production.cms.muon import MuonSFConfig
 from columnflow.calibration.cms.tau import TECConfig
 from columnflow.calibration.cms.egamma import EGammaCorrectionConfig
-from columnflow.config_util import get_root_processes_from_campaign, get_shifts_from_sources
-from columnflow.config_util import add_shift_aliases, verify_config_processes 
+from columnflow.calibration.cms.met import METPhiConfig, METPhiConfigRun2
 
 from multilepton.config.styles import stylize_processes, setup_plot_styles
 from multilepton.config.categories import add_categories
@@ -43,9 +43,13 @@ from multilepton.config.triggers import add_triggers
 
 logger = law.logger.get_logger(__name__)
 
-# Load analysis configuration
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "analysis.yaml"), "r") as f:
-    analysis_data = yaml.load(f, yaml.Loader)
+
+
+def load_datasets_config(yaml_path):
+    """Load dataset information from the YAML file."""
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+    return data
 
 
 class AnalysisConfig:
@@ -124,6 +128,9 @@ class AnalysisConfig:
         return sorted(set(process_names))
 
 
+# Load analysis configuration
+analysis_data = load_datasets_config(os.path.join(os.path.dirname(os.path.abspath(__file__)), "analysis.yaml"))
+
 # Initialize config helper
 analysis_cfg = AnalysisConfig(analysis_data)
 
@@ -151,9 +158,9 @@ def nested_dict():
 def bTagWorkingPoints(year, run, campaign):
     getfromyear = year
     if year == 2024: getfromyear = 2023 # still missing FIXME once they are updated by BTV-POG
-    fileName = localizePOGSF(getfromyear, "BTV", "btagging.json.gz")
+    fileName = law.LocalFileTarget(localizePOGSF(getfromyear, "BTV", "btagging.json.gz"))
     logger.info(f'... getting working points and discr cuts from : {fileName}')
-    ceval = correctionlib.CorrectionSet.from_file(fileName)
+    ceval = load_correction_set(fileName)
     btagging = nested_dict()
     if run == 2:
         taggers = ["deepJet", "deepcsv", "particleNetMD"]
@@ -315,23 +322,13 @@ def add_config(
                 }
         e_postfix = EGMcorrection.get(f"{year}{campaign.x.postfix}")
         e_prefix = 'UL-' if run == 2 else ''
+        
         cfg.x.electron_sf_names = ElectronSFConfig(
             correction="{e_prefix}Electron-ID-SF",
             campaign=f"{year}{e_postfix}",
             working_point="wp80iso",
         )
-        cfg.x.eec = EGammaCorrectionConfig(
-            correction_set="Scale",
-            compound=False,
-            value_type="total_correction",
-            uncertainty_type="total_uncertainty",
-        )
-        cfg.x.eer = EGammaCorrectionConfig(
-            correction_set="Smearing",
-            compound=False,
-            value_type="rho",
-            uncertainty_type="err_rho",
-        )
+        
         # Define HLT paths for easier maintenance
         hlt_single, hlt_cross = "HLT_SF_Ele30_TightID", "HLT_SF_Ele24_TightID"
 
@@ -352,18 +349,14 @@ def add_config(
             e_tag = {"": "preEE", "EE": "postEE"}[campaign.x.postfix]
         elif year == 2023:
             e_tag = {"": "preBPIX", "BPix": "postBPIX"}[campaign.x.postfix]
-        
-        cfg.x.eec = EGammaCorrectionConfig(
-            correction_set=f"EGMScale_Compound_Ele_{year}{e_tag}",
-            value_type="scale",
-            uncertainty_type="escale",
-            compound=True,
-        )
-        cfg.x.eer = EGammaCorrectionConfig(
-            correction_set=f"EGMSmearAndSyst_ElePTsplit_{year}{e_tag}",
-            value_type="smear",
-            uncertainty_type="esmear",
-        )
+       
+        # electron scale and smearing (eec and eer)
+        cfg.x.ess = EGammaCorrectionConfig(
+            scale_correction_set="Scale",
+            scale_compound=True,
+            smear_syst_correction_set="SmearAndSyst",
+            systs=["scale_down", "scale_up", "smear_down", "smear_up"],
+        ) 
         return cfg
 
     def ConfigureTaus(cfg, run, campaign):
@@ -690,6 +683,10 @@ def add_config(
                         dataset.add_tag({"mutau", "emu_from_mu", "mumu"})
                     if dataset.name.startswith("data_tau_"):
                         dataset.add_tag({"tautau"})
+                    proc, id = convert_dataset_to_process(dataset_name, campaign, all_processes_from_campaign)
+                    if id is None or not campaign.has_dataset(dataset_name):
+                        continue
+                    cfg.add_process(proc, id)
                     # Optional: special tag for broken MET filter in 2022
                     # bad ecalBadCalibFilter MET filter in 2022 data
                     # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2?rev=172#ECal_BadCalibration_Filter_Flag
@@ -780,9 +777,9 @@ def add_config(
     }
 
     # plotting overwrites
-    stylize_processes(cfg)
+    stylize_processes(cfg, datasets_config)
     # Configure colors, labels, etc
-    setup_plot_styles(cfg) 
+    setup_plot_styles(cfg, analysis_data.get('plot_defaults',{})) 
 
     #=============================================
     # Jet Energy Corrections (JEC) and Jet Energy Resolution (JER)
@@ -834,11 +831,31 @@ def add_config(
     if run == 2:
         cfg.x.met_name = "MET"
         cfg.x.raw_met_name = "RawMET"
-        cfg.x.met_phi_correction_set = r"{variable}_metphicorr_pfmet_{data_source}"
+        cfg.x.met_phi_correction = METPhiConfigRun2(
+            met_name=cfg.x.met_name,
+            correction_set_template="{variable}_metphicorr_pfmet_{data_source}",
+            keep_uncorrected=True,
+        )
     elif run == 3:
         cfg.x.met_name = "PuppiMET"
         cfg.x.raw_met_name = "RawPuppiMET"
-
+        cfg.x.met_phi_correction = METPhiConfig(
+            met_name=cfg.x.met_name,
+            met_type=cfg.x.met_name,
+            correction_set="met_xy_corrections",
+            keep_uncorrected=True,
+            pt_phi_variations={
+                "stat_xdn": "metphi_statx_down",
+                "stat_xup": "metphi_statx_up",
+                "stat_ydn": "metphi_staty_down",
+                "stat_yup": "metphi_staty_up",
+            },
+            variations={
+                "pu_dn": "minbias_xs_down",
+                "pu_up": "minbias_xs_up",
+            },
+        )
+    
     #=============================================
     # b-tag working points 
     #=============================================
@@ -858,7 +875,15 @@ def add_config(
     # top pt reweighting
     # https://twiki.cern.ch/twiki/bin/view/CMS/TopPtReweighting?rev=31
     #=============================================
-    cfg.x.top_pt_weight = TopPtWeightConfig(
+    # theory-based method preferred
+    # cfg.x.top_pt_weight = TopPtWeightFromTheoryConfig(params={
+    #     "a": 0.103,
+    #     "b": -0.0118,
+    #     "c": -0.000134,
+    #     "d": 0.973,
+    # })
+    # data-based method preferred
+    cfg.x.top_pt_weight = TopPtWeightFromDataConfig(
         params={
             "a": 0.0615,
             "a_up": 0.0615 * 1.5,

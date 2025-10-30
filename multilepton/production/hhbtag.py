@@ -28,7 +28,7 @@ logger = law.logger.get_logger(__name__)
         "Jet.{pt,eta,phi,mass,jetId,btagDeepFlavB}", IF_RUN_2("Jet.puId"),
         MET_COLUMN("{pt,phi}"),
     },
-    sandbox=dev_sandbox("bash::$MULTILEPTON_BASE/sandboxes/venv_columnar_tf.sh"),
+    sandbox=dev_sandbox("bash::$MULTILEPTON_BASE/sandboxes/venv_multilepton.sh"),
 )
 def hhbtag(
     self: Producer,

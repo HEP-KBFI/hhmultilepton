@@ -49,7 +49,7 @@ set_ak_column_f32 = functools.partial(set_ak_column, value_type=np.float32)
     # limited chunk size to avoid memory issues
     max_chunk_size=5_000,
     # produced columns are added in the deferred init below
-    sandbox=dev_sandbox("bash::$MULTILEPTON_BASE/sandboxes/venv_columnar_tf.sh"),
+    sandbox=dev_sandbox("bash::$MULTILEPTON_BASE/sandboxes/venv_multilepton.sh"),
     # not exposed to be called from the command line
     exposed=False,
 )
