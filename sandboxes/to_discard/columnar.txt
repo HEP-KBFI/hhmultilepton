@@ -1,5 +1,0 @@
-# version 18
--r ../modules/columnflow/sandboxes/columnar.txt
-
-pandas==2.3.2
-boost-histogram==1.5.2
