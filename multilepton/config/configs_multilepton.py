@@ -233,7 +233,6 @@ def convert_dataset_to_process(dataset, campaign, all_processes_from_campaign):
             id = proc.id
             break  # <-- exit the loop immediately when found
     if id is None:
-        #raise ValueError(f"Will skip ... No matching process '{process}' found for dataset in campaign '{campaign.name}'")
         logger.warning(f"Will skip ... No matching process '{process}' found for dataset in campaign '{campaign.name}'")
     return process, id
 
@@ -352,9 +351,10 @@ def add_config(
        
         # electron scale and smearing (eec and eer)
         cfg.x.ess = EGammaCorrectionConfig(
-            scale_correction_set="Scale",
-            scale_compound=True,
-            smear_syst_correction_set="SmearAndSyst",
+            scale_correction_set=f"EGMScale_ElePTsplit_{year}",
+            scale_compound=False,
+            smear_syst_correction_set=f"EGMSmearAndSyst_ElePTsplit_{year}",
+            smear_syst_compound=False,
             systs=["scale_down", "scale_up", "smear_down", "smear_up"],
         ) 
         return cfg
