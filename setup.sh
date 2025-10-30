@@ -44,6 +44,7 @@ setup_multilepton() {
 
     local orig="${PWD}"
     local setup_name="$1"
+    local which_sandbox="${2:-minimal}"   # default to "minimal" if nothing passed
     local setup_is_default="false"
     [ "${setup_name}" = "default" ] && setup_is_default="true"
 
@@ -75,7 +76,14 @@ setup_multilepton() {
     export CF_SETUP_NAME="${setup_name}"
     export CF_SCHEDULER_HOST="${CF_SCHEDULER_HOST:-naf-cms14.desy.de}"
     export CF_SCHEDULER_PORT="${CF_SCHEDULER_PORT:-8088}"
-    export CF_INTERACTIVE_VENV_FILE="${CF_INTERACTIVE_VENV_FILE:-${MULTILEPTON_BASE}/sandboxes/venv_multilepton_dev.sh}"
+    # Choose between minimal and extended sandboxes
+    if [[ "${which_sandbox}" == "minimal" || "${1}" == *"minimal"* ]]; then
+        export CF_INTERACTIVE_VENV_FILE="${CF_INTERACTIVE_VENV_FILE:-${MULTILEPTON_BASE}/sandboxes/venv_multilepton.sh}"
+        cf_color green "→ Using MINIMAL venv from (sandboxes/venv_multilepton.sh)"
+    else
+        export CF_INTERACTIVE_VENV_FILE="${CF_INTERACTIVE_VENV_FILE:-${MULTILEPTON_BASE}/sandboxes/venv_multilepton_dev.sh}"
+        cf_color green "→ Using EXTENDED venv from (sandboxes/venv_multilepton_dev.sh)"
+    fi
     [ ! -z "${CF_INTERACTIVE_VENV_FILE}" ] && export CF_INSPECT_SANDBOX="$( basename "${CF_INTERACTIVE_VENV_FILE%.*}" )"
     # default job flavor settings (starting with naf / maxwell cluster defaults)
     # used by law.cfg and, in turn, tasks/framework/remote.py

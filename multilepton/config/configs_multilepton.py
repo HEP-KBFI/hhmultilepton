@@ -349,14 +349,15 @@ def add_config(
         elif year == 2023:
             e_tag = {"": "preBPIX", "BPix": "postBPIX"}[campaign.x.postfix]
        
-        # electron scale and smearing (eec and eer)
-        cfg.x.ess = EGammaCorrectionConfig(
-            scale_correction_set=f"EGMScale_ElePTsplit_{year}",
-            scale_compound=False,
-            smear_syst_correction_set=f"EGMSmearAndSyst_ElePTsplit_{year}",
-            smear_syst_compound=False,
-            systs=["scale_down", "scale_up", "smear_down", "smear_up"],
-        ) 
+        if run ==3:
+            # electron scale and smearing (eec and eer)
+            cfg.x.ess = EGammaCorrectionConfig(
+                scale_correction_set=f"EGMScale_ElePTsplit_{year}",
+                scale_compound=False,
+                smear_syst_correction_set=f"EGMSmearAndSyst_ElePTsplit_{year}",
+                smear_syst_compound=False,
+                systs=["scale_down", "scale_up", "smear_down", "smear_up"],
+            ) 
         return cfg
 
     def ConfigureTaus(cfg, run, campaign):

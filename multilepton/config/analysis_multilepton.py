@@ -27,7 +27,6 @@ analysis_multilepton.x.versions = {}
 # Bash sandboxes required by remote tasks
 analysis_multilepton.x.bash_sandboxes = [
     "$CF_BASE/sandboxes/cf.sh",
-    "$CF_BASE/sandboxes/venv_columnar.sh",
     "$MULTILEPTON_BASE/sandboxes/venv_multilepton.sh",
 ]
 
