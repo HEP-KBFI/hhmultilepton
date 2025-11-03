@@ -5,13 +5,41 @@ Collection of patches of underlying columnflow tasks.
 """
 
 import os
+import law
 import getpass
 
-import law
 from columnflow.util import memoize
 
 
 logger = law.logger.get_logger(__name__)
+
+
+@memoize
+def patch_columnar_pyarrow_version():
+    """
+    Comments out the pyarrow==21.0.0 line in the columnar.txt sandbox file.
+    """
+    columnar_path = os.path.join(
+        os.environ["MULTILEPTON_BASE"], "modules", "columnflow", "sandboxes", "columnar.txt"
+    )
+
+    if not os.path.exists(columnar_path):
+        logger.warning(f"File not found: {columnar_path}")
+        return
+    with open(columnar_path, "r") as f:
+        lines = f.readlines()
+
+    new_lines = []
+    for line in lines:
+        if "pyarrow==" in line and not line.strip().startswith("#"):
+            new_lines.append(f"# {line.strip()}\n")
+            logger.debug("Commented out pyarrow line in columnar.txt")
+        else:
+            new_lines.append(line)
+
+    with open(columnar_path, "w") as f:
+        f.writelines(new_lines)
+    logger.info(f"Patched {columnar_path}: commented out pyarrow requirement")
 
 
 @memoize
@@ -24,18 +52,14 @@ def patch_bundle_repo_exclude_files():
 
     # get the relative path to CF_BASE
     cf_rel = os.path.relpath(os.environ["CF_BASE"], os.environ["MULTILEPTON_BASE"])
-
     # amend exclude files to start with the relative path to CF_BASE
     exclude_files = [os.path.join(cf_rel, path) for path in BundleRepo.exclude_files]
-
     # add additional files
     exclude_files.extend([
         "docs", "tests", "data", "assets", ".law", ".setups", ".data", ".github",
     ])
-
     # overwrite them
     BundleRepo.exclude_files[:] = exclude_files
-
     logger.debug(f"patched exclude_files of {BundleRepo.task_family}")
 
 
@@ -49,7 +73,6 @@ def patch_remote_workflow_poll_interval():
 
     HTCondorWorkflow.poll_interval._default = 1.0  # minutes
     SlurmWorkflow.poll_interval._default = 1.0  # minutes
-
     logger.debug(f"patched poll_interval._default of {HTCondorWorkflow.task_family} and {SlurmWorkflow.task_family}")
 
 
@@ -62,7 +85,6 @@ def patch_merge_reduction_stats_inputs():
     from columnflow.tasks.reduction import MergeReductionStats
 
     MergeReductionStats.n_inputs._default = -1
-
     logger.debug(f"patched n_inputs default value of {MergeReductionStats.task_family}")
 
 
@@ -78,7 +100,6 @@ def patch_htcondor_workflow_naf_resources():
         return {f"naf_{getpass.getuser()}": 1}
 
     HTCondorWorkflow.htcondor_job_resources = htcondor_job_resources
-
     logger.debug(f"patched htcondor_job_resources of {HTCondorWorkflow.task_family}")
 
 
@@ -88,58 +109,12 @@ def patch_slurm_partition_setting():
     Patches the slurm remote workflow to allow setting things like partition
     by commandline instead of overiding with central default.
     """
-    # import math
     from columnflow.tasks.framework.remote import RemoteWorkflow
+    
     RemoteWorkflow.exclude_params_branch.remove("slurm_partition")
     RemoteWorkflow.slurm_partition.significant = True
-
     RemoteWorkflow.exclude_params_branch.remove("slurm_flavor")
     RemoteWorkflow.slurm_flavor._choices.add("manivald")
-    # Does strangely disable the transfer of enviorment variables, not needed at the moment bu at TODO
-    # def slurm_job_config(self, config, job_num, branches):
-    #     # add common config settings
-    #     self.add_common_configs(
-    #         config,
-    #         {},
-    #         law_config=False,
-    #         voms=True,
-    #         kerberos=True,
-    #         wlcg=False,
-    #     )
-
-    #     # set job time
-    #     if self.max_runtime is not None:
-    #         job_time = law.util.human_duration(
-    #         seconds=int(math.floor(self.max_runtime * 3600)) - 1,
-    #         colon_format=True,
-    #         )
-    #         config.custom_content.append(("time", job_time))
-
-    #     # set nodes
-    #     config.custom_content.append(("nodes", 1))
-
-    #     # custom, flavor dependent settings
-    #     if self.slurm_flavor == "maxwell":
-    #         # nothing yet
-    #         pass
-    #     elif self.slurm_flavor == "manivald":
-    #         # nothing yet
-    #         pass
-    #     # render variales
-    #     config.render_variables["cf_bootstrap_name"] = "slurm"
-    #     config.render_variables.setdefault("cf_pre_setup_command", "")
-    #     config.render_variables.setdefault("cf_post_setup_command", "")
-    #     if self.slurm_flavor not in ("", law.NO_STR):
-    #         config.render_variables["cf_slurm_flavor"] = self.slurm_flavor
-
-    #     # forward env variables
-    #     for ev, rv in self.slurm_forward_env_variables.items():
-    #         config.render_variables[rv] = os.environ[ev]
-
-    #         return config
-    # RemoteWorkflow.slurm_job_config=slurm_job_config
-    # print(RemoteWorkflow.slurm_forward_env_variables)
-
     logger.debug(f"patched slurm partition/flavor settings of {RemoteWorkflow.task_family}")
 
 
@@ -149,4 +124,5 @@ def patch_all():
     patch_remote_workflow_poll_interval()
     patch_slurm_partition_setting()
     patch_merge_reduction_stats_inputs()
-#    patch_htcondor_workflow_naf_resources()
+    patch_columnar_pyarrow_version()    
+    #patch_htcondor_workflow_naf_resources()

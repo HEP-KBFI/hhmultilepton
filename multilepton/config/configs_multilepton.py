@@ -233,7 +233,7 @@ def convert_dataset_to_process(dataset, campaign, all_processes_from_campaign):
             id = proc.id
             break  # <-- exit the loop immediately when found
     if id is None:
-        logger.warning(f"Will skip ... No matching process '{process}' found for dataset in campaign '{campaign.name}'")
+        logger.warning(f"Will skip ... No matching process '{process}' found in campaign '{campaign.name}' datasets")
     return process, id
 
 
@@ -650,6 +650,7 @@ def add_config(
                     info.n_files = min(info.n_files, limit_dataset_files)
     
     # Add data
+    process_names = []
     streams = datasets_config["data"]["streams"]
     for y, year_cfg in datasets_config["data"].items():
         if y == "streams" or int(y) != campaign.x.year:
@@ -678,16 +679,19 @@ def add_config(
                 dataset_names += requested_data 
                 for dataset_name in requested_data:
                     dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
+                    proc = '_'.join(dataset_name.split('_')[:2])
+                    id = next((p.id for p in all_processes_from_campaign if p.name == proc), None)
+                    if id is None:
+                        raise ValueError(f"No process found with name '{proc}' in run{run} campaign: {campaign}")
+                    if proc not in process_names:
+                        process_names +=[proc]
+                        cfg.add_process(proc, id)
                     if dataset.name.startswith("data_e_"):
                         dataset.add_tag({"etau", "emu_from_e", "ee"})
                     if dataset.name.startswith("data_mu_"):
                         dataset.add_tag({"mutau", "emu_from_mu", "mumu"})
                     if dataset.name.startswith("data_tau_"):
                         dataset.add_tag({"tautau"})
-                    proc, id = convert_dataset_to_process(dataset_name, campaign, all_processes_from_campaign)
-                    if id is None or not campaign.has_dataset(dataset_name):
-                        continue
-                    cfg.add_process(proc, id)
                     # Optional: special tag for broken MET filter in 2022
                     # bad ecalBadCalibFilter MET filter in 2022 data
                     # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2?rev=172#ECal_BadCalibration_Filter_Flag

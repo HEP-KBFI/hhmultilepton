@@ -1,7 +1,9 @@
+export PATH=$LCG_VERSION/bin:$PATH
 export CF_CERN_USER="kjaffel"
 export CF_CERN_USER_FIRSTCHAR="${CF_CERN_USER:0:1}"
 export CF_DATA="$CF_REPO_BASE/columnflow_venv"
 export CF_SOFTWARE_BASE="$CF_DATA/software"
+export CF_VENV_BASE="$CF_SOFTWARE_BASE/venvs"
 export CF_STORE_NAME="cf_store"
 export CF_WLCG_USE_CACHE="true"
 export CF_WLCG_CACHE_CLEANUP="false"
@@ -13,9 +15,16 @@ export CF_SCHEDULER_HOST="127.0.0.1"
 export CF_SCHEDULER_PORT="8082"
 export CF_FLAVOR="cms"
 export LAW_CMS_VO="cms"
-# for manivald
+
+# on manivald
 export CF_CRAB_STORAGE_ELEMENT="T2_EE_Estonia"
+export CF_SLURM_FLAVOR="manivald"
+export CF_SLURM_PARTITION="main"
 export CF_JOB_BASE="/local/$CF_CERN_USER/HHMultilepton_Run3"
 export CF_STORE_LOCAL="/local/$CF_CERN_USER/HHMultilepton_Run3"
 export CF_WLCG_CACHE_ROOT="/local/$CF_CERN_USER/HHMultilepton_Run3/cf_scratch"
 export CF_CRAB_BASE_DIRECTORY="/store/user/$CF_CERN_USER/cf_crab_outputs"
+
+# on lxplus
+#export CF_CRAB_STORAGE_ELEMENT="T2_CH_CERN"
+#export CF_HTCONDOR_FLAVOR="cern_el9"   # or "cern" for older versions of lxplus not using ELMA9

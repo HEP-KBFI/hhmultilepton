@@ -11,9 +11,8 @@ setup_multilepton() {
     # optionally an interactive setup where the user can configure certain variables.
     #
     # Arguments:
-    #   1. The name of the setup. "default" (which is itself the default when no name is set)
-    #      triggers a setup with good defaults, avoiding all queries to the user and the writing of
-    #      a custom setup file. See "interactive_setup()" for more info.
+    #   1. A "name" of setup.
+    #   2. "minimal" or "full" setup, affect which venv from the sandbox will be sourced
     #
     # Optinally preconfigured environment variables:
     #   None yet.
@@ -23,6 +22,26 @@ setup_multilepton() {
     #       The absolute analysis base directory. Used to infer file locations relative to it.
     #   MULTILEPTON_SETUP
     #       A flag that is set to 1 after the setup was successful.
+    
+    
+    if [ $# -lt 1 ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+        echo ""
+        echo "Usage: source setup.sh <setup_name> [sandbox_type]"
+        echo ""
+        echo "Arguments:"
+        echo "  <setup_name>     Name of the setup (random name of your choice)"
+        echo "  [sandbox_type]   Optional: choose between 'minimal' (default) or 'full'"
+        echo ""
+        cf_color green "Examples:"
+        cf_color green "  source setup.sh dev            # uses minimal environment"
+        cf_color green "  source setup.sh dev full       # uses extended environment"
+        echo ""
+        cf_color cyan "'minimal'→ uses MINIMAL environment from (sandboxes/venv_multilepton.sh)"
+        cf_color cyan "'full' → uses FULL environment from (sandboxes/venv_multilepton_dev.sh)"
+        echo ""
+        return 1
+    fi
+ 
     
     #
     # load cf setup helpers
@@ -53,7 +72,7 @@ setup_multilepton() {
     #
     cf_export_bool MULTILEPTON_SETUP
     if ${MULTILEPTON_SETUP} && ! ${CF_ON_SLURM}; then
-        >&2 echo "the HH -> Multilepton analysis was already succesfully setup"
+        >&2 echo "The HH → Multilepton analysis was already succesfully setup"
         >&2 echo "re-running the setup requires a new shell"
         return "1"
     fi
@@ -68,6 +87,7 @@ setup_multilepton() {
     # global variables
     # (MULTILEPTON = hhmultilepton, CF = columnflow)
     #
+    
     # start exporting variables
     export MULTILEPTON_BASE="${this_dir}"
     export CF_BASE="${cf_base}"
@@ -86,7 +106,7 @@ setup_multilepton() {
     fi
     [ ! -z "${CF_INTERACTIVE_VENV_FILE}" ] && export CF_INSPECT_SANDBOX="$( basename "${CF_INTERACTIVE_VENV_FILE%.*}" )"
     # default job flavor settings (starting with naf / maxwell cluster defaults)
-    # used by law.cfg and, in turn, tasks/framework/remote.py
+    # used by law.cfg and, in turn, modules/columnflow/tasks/framework/remote.py
     local cf_htcondor_flavor_default="cern_el9"
     local cf_slurm_flavor_default="manivald"
     local cf_slurm_partition_default="main"
@@ -162,6 +182,7 @@ setup_multilepton() {
     # finalize
     #
     export MULTILEPTON_SETUP="true"
+     PS1="\[\033[1;35m\][multilepton_venv]\[\033[0m\] \u@\h:\W\$ "
 }
 
 multilepton_show_banner() {
@@ -181,9 +202,10 @@ main() {
         return "0"
     else
         local code="$?"
-        cf_color red "setup failed with code ${code}"
+        cf_color red "HH -> Multilepton analysis setup failed with code ${code}"
         return "${code}"
     fi
+    
 }
 
 # entry point
