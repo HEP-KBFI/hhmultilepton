@@ -35,37 +35,16 @@ cd hhmultilepton
 # get a voms token
 voms-proxy-init -voms cms -rfc -valid 196:00
 
-# source the setup and store decisions in .setups/dev.sh (arbitrary name)
-source setup.sh dev
+# copy the provided template to a new file (you can choose any name):
+cp .setups/template.sh .setups/mydev.sh
 
-# sourcing the above you will be asked to confirm or change the default exports mentionned below 
-# Decisions include storage locations, these should be set according to the system you are running the code on:
-# CF_DATA should point to a location in home (manivald) or afs (lxplus), same as CF_SOFTWARE_BASE and CF_JOB_BASE
-# CF_WLCG_CACHE_ROOT is a cache for remote files should be on /local/user (manivald) or eos (lxplus).
+# open .setups/mydev.sh in your editor and adjust any environment variables or paths as needed for your local setup.
+# then source the main setup script with your custom setup name:
+source setup.sh mydev
 
-# suggestion for lxplus setup:
-
-export CF_DATA="$CF_REPO_BASE/data"
-export CF_SOFTWARE_BASE="$CF_DATA/software"
-export CF_JOB_BASE="$CF_DATA/jobs"
-export CF_STORE_NAME="cf_store"
-export CF_STORE_LOCAL="$CF_DATA/$CF_STORE_NAME"
-export CF_WLCG_CACHE_ROOT="/eos/user/$CF_CERN_USER_FIRSTCHAR/$CF_CERN_USER/HHMultilepton_Run3/cf_scratch"
-export CF_WLCG_USE_CACHE="true"
-export CF_WLCG_CACHE_CLEANUP="false"
-export CF_CRAB_STORAGE_ELEMENT="T2_EE_Estonia"
-export CF_CRAB_BASE_DIRECTORY="/store/user/$CF_CERN_USER/cf_crab_outputs"
-
-# if space in afs is a problem, one can try
-export CF_SOFTWARE_BASE="/eos/user/$CF_CERN_USER_FIRSTCHAR/$CF_CERN_USER/HHMultilepton_Run3/software"
-
-# suggestion for manivald is the same except:
-export CF_JOB_BASE="/local/$CF_CERN_USER/HHMultilepton_Run3/jobs"
-export CF_WLCG_CACHE_ROOT="/local/$CF_CERN_USER/HHMultilepton_Run3/cf_scratch"
-
-# After first time setup, *if on manivald the estonian login node*, open the created setup file ( in this case .setups/dev.sh) and add:
-export TMPDIR="/scratch/local/$CF_CERN_USER"
-
+# if you choose not to use the provided template, you can still activate the environment directly:
+# in this case, the setup script will guide you interactively and request you to fill in the necessary environment variables (export commands) manually.
+source setup.sh bla # bla should not be found under .steup/
 ```
 
 <img width="1336" height="506" alt="image" src="https://github.com/user-attachments/assets/29e6f810-e273-4b2e-9a80-02427e228298" />
