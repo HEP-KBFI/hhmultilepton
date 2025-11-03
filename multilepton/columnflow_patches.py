@@ -33,13 +33,12 @@ def patch_columnar_pyarrow_version():
     for line in lines:
         if "pyarrow==" in line and not line.strip().startswith("#"):
             new_lines.append(f"# {line.strip()}\n")
-            logger.debug("Commented out pyarrow line in columnar.txt")
         else:
             new_lines.append(line)
 
     with open(columnar_path, "w") as f:
         f.writelines(new_lines)
-    logger.info(f"Patched {columnar_path}: commented out pyarrow requirement")
+    logger.debug(f"Patched {columnar_path}: commented out pyarrow requirement")
 
 
 @memoize
@@ -50,15 +49,11 @@ def patch_bundle_repo_exclude_files():
     """
     from columnflow.tasks.framework.remote import BundleRepo
 
-    # get the relative path to CF_BASE
     cf_rel = os.path.relpath(os.environ["CF_BASE"], os.environ["MULTILEPTON_BASE"])
-    # amend exclude files to start with the relative path to CF_BASE
     exclude_files = [os.path.join(cf_rel, path) for path in BundleRepo.exclude_files]
-    # add additional files
     exclude_files.extend([
         "docs", "tests", "data", "assets", ".law", ".setups", ".data", ".github",
     ])
-    # overwrite them
     BundleRepo.exclude_files[:] = exclude_files
     logger.debug(f"patched exclude_files of {BundleRepo.task_family}")
 

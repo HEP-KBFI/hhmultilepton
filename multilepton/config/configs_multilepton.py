@@ -836,7 +836,7 @@ def add_config(
     if run == 2:
         cfg.x.met_name = "MET"
         cfg.x.raw_met_name = "RawMET"
-        cfg.x.met_phi_correction = METPhiConfigRun2(
+        cfg.x.Met_phi_correction = METPhiConfigRun2(
             met_name=cfg.x.met_name,
             correction_set_template="{variable}_metphicorr_pfmet_{data_source}",
             keep_uncorrected=True,
@@ -1057,7 +1057,7 @@ def add_config(
             tau_pog_suffix = f"{'pre' if campaign.has_tag('preBPix') else 'post'}BPix"
         if year == 2024: # just for now FIXME 
             tauPOGJsonFile = "tau_DeepTau2018v2p5_2023_preBPix.json.gz"
-            metPOGJsonFile = "met_xyCorrections_2023_2023.json.gz"
+            metPOGJsonFile = "met_xyCorrections_2024.json.gz"
         else:
             tauPOGJsonFile = f"tau_DeepTau2018v2p5_{year}_{tau_pog_suffix}.json.gz"
             metPOGJsonFile = f"met_xyCorrections_{met_pog_suffix}.json.gz"
@@ -1087,7 +1087,8 @@ def add_config(
     if year == 2024: getfromyear = 2023 # correction still missing for 2024 workaround with 2023 preBix for now
     add_external("tau_sf", (localizePOGSF(getfromyear, "TAU", f"{tauPOGJsonFile}"), "v1"))
     add_external("pu_sf", (localizePOGSF(getfromyear, "LUM", "puWeights.json.gz"), "v1"))
-    add_external("met_phi_corr", (localizePOGSF(getfromyear, "JME", f"{metPOGJsonFile}"), "v1"))
+    add_external("met_phi_corr", (f"{os.path.dirname(os.path.abspath(__file__))}/../data/{metPOGJsonFile}", "v1"))
+    #add_external("met_phi_corr", (localizePOGSF(getfromyear, "JME", f"{metPOGJsonFile}"), "v1"))
 
     # run specific files
     if run == 2:
