@@ -44,7 +44,7 @@ source setup.sh mydev
 
 # if you choose not to use the provided template, you can still activate the environment directly:
 # in this case, the setup script will guide you interactively and request you to fill in the necessary environment variables (export commands) manually.
-source setup.sh bla # bla should not be found under .steup/
+#source setup.sh bla # bla should not be found under .steups/
 ```
 
 <img width="1336" height="506" alt="image" src="https://github.com/user-attachments/assets/29e6f810-e273-4b2e-9a80-02427e228298" />
