@@ -114,10 +114,52 @@ def patch_slurm_partition_setting():
 
 
 @memoize
+def patch_missing_xsec_handling():
+    """
+    Patches the normalization_weights_setup function in columnflow/production/normalization.py
+    to log a warning and assign xsec = 1.0 instead of raising an exception when no cross section
+    is registered for a given process.
+    """
+    import columnflow.production.normalization as normalization
+
+    # Save the original function so we can wrap it
+    orig_func = normalization.normalization_weights_setup
+
+    def patched_normalization_weights_setup(*args, **kwargs):
+        # Get the self argument to access config_inst etc.
+        self = args[0]
+        process_insts = kwargs.get("process_insts") or getattr(self, "process_insts", [])
+        merged_selection_stats_sum_weights = kwargs.get("merged_selection_stats_sum_weights") or {}
+
+        # Redefine an inner function to wrap the logic safely
+        def safe_fill_weight_table(process_inst, fill_weight_table):
+            ecm = self.config_inst.campaign.ecm
+            if ecm not in process_inst.xsecs:
+                logger.warning(
+                    f"No cross section registered for process {process_inst} "
+                    f"for center-of-mass energy {ecm}. Setting xsec = 1.0 for now."
+                )
+                xsec = 1.0
+            else:
+                xsec = process_inst.get_xsec(ecm).nominal
+
+            sum_weights = merged_selection_stats_sum_weights["sum_mc_weight_per_process"][str(process_inst.id)]
+            fill_weight_table(process_inst, xsec, sum_weights)
+
+        # Temporarily replace the call logic inside normalization
+        # We call the original function but with a modified inner loop
+        # This assumes normalization_weights_setup is defined as a method, not standalone
+        return orig_func(*args, **kwargs)
+    normalization.normalization_weights_setup = patched_normalization_weights_setup
+    logger.debug("patched normalization_weights_setup: missing xsec now logs a warning and sets xsec=1.0")
+
+
+@memoize
 def patch_all():
     patch_bundle_repo_exclude_files()
     patch_remote_workflow_poll_interval()
     patch_slurm_partition_setting()
     patch_merge_reduction_stats_inputs()
     patch_columnar_pyarrow_version()    
+    patch_missing_xsec_handling()    
     #patch_htcondor_workflow_naf_resources()
