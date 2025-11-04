@@ -37,12 +37,11 @@ from multilepton.selection.jet import jet_selection
 from multilepton.production.btag import btag_weights_deepjet, btag_weights_pnet
 from multilepton.production.features import cutflow_features
 from multilepton.production.patches import patch_ecalBadCalibFilter
-from multilepton.util import IF_DATASET_HAS_LHE_WEIGHTS, IF_RUN_3
+from multilepton.util import IF_DATASET_HAS_LHE_WEIGHTS, IF_RUN_3, IF_RUN_3_NOT_NANO_V15
 
 np = maybe_import("numpy")
 ak = maybe_import("awkward")
 hist = maybe_import("hist")
-
 logger = law.logger.get_logger(__name__)
 
 
@@ -51,7 +50,6 @@ def get_met_filters(self: Selector) -> Iterable[str]:
     met_filters = set(self.config_inst.x.met_filters[self.dataset_inst.data_source])
     if self.dataset_inst.has_tag("broken_ecalBadCalibFilter"):
         met_filters -= {"Flag.ecalBadCalibFilter"}
-
     return list(met_filters)
 
 
@@ -77,13 +75,12 @@ def get_bad_events(self: Selector, events: ak.Array) -> ak.Array:
             logger.warning(
                 f"found {ak.sum(bad_lhe_mask)} events ({frac * 100:.1f}%) with bad LHEPdfWeights",
             )
-
     return bad_mask
 
 
 @selector(
     uses={
-        json_filter, met_filters, IF_RUN_3(jet_veto_map), trigger_selection, lepton_selection, jet_selection,
+        json_filter, met_filters, IF_RUN_3_NOT_NANO_V15(jet_veto_map), trigger_selection, lepton_selection, jet_selection,
         mc_weight, pu_weight, ps_weights, btag_weights_deepjet, IF_RUN_3(btag_weights_pnet), process_ids,
         cutflow_features, attach_coffea_behavior, patch_ecalBadCalibFilter,
         IF_DATASET_HAS_LHE_WEIGHTS(pdf_weights, murmuf_weights),
@@ -104,23 +101,19 @@ def default(
 ) -> tuple[ak.Array, SelectionResult]:
     # ensure coffea behavior
     events = self[attach_coffea_behavior](events, **kwargs)
-
     # prepare the selection results that are updated at every step
     results = SelectionResult()
-
     # before performing selection steps, drop events that should not be considered at all and
     # maintain a mask "no_sel" that refers to events that are kept
     bad_mask = get_bad_events(self, events)
     no_sel = ~bad_mask
     results += SelectionResult(steps={"bad": no_sel})
-
     # filter bad data events according to golden lumi mask
     if self.dataset_inst.is_data:
         events, json_filter_results = self[json_filter](events, **kwargs)
         results += json_filter_results
     else:
         results += SelectionResult(steps={"json": full_like(events.event, True, dtype=bool)})
-
     # met filter selection
     events, met_filter_results = self[met_filters](events, **kwargs)
     # patch for the broken "Flag_ecalBadCalibFilter" MET filter in prompt data (tag set in config)
@@ -132,7 +125,7 @@ def default(
             events.patchedEcalBadCalibFilter
         )
     results += met_filter_results
-
+    
     # jet veto map
     if self.has_dep(jet_veto_map):
         events, veto_result = self[jet_veto_map](events, **kwargs)
@@ -153,7 +146,6 @@ def default(
     # mc-only functions
     if self.dataset_inst.is_mc:
         events = self[mc_weight](events, **kwargs)
-
         # pdf weights
         if self.has_dep(pdf_weights):
             events = self[pdf_weights](
@@ -169,6 +161,7 @@ def default(
 
         # parton shower weights
         events = self[ps_weights](events, invalid_weights_action="ignore_one", **kwargs)
+        
         # pileup weights
         events = self[pu_weight](events, **kwargs)
 
@@ -200,7 +193,6 @@ def default(
     events["FatJet"] = events.FatJet[results.objects.FatJet.FatJet]
     # store number of jets for stats and histograms
     events = set_ak_column(events, "n_jets_stats", results.x.n_central_jets, value_type=np.int32)
-    # some cutflow features
     events = self[cutflow_features](events, results.objects, **kwargs)
     # combined event selection after all steps
     event_sel = reduce(and_, results.steps.values())
@@ -230,7 +222,6 @@ def default(
             "nob_pnet": event_sel_nob(btag_weights_pnet) if self.has_dep(btag_weights_pnet) else None,
         },
     )
-
     return events, results
 
 
@@ -415,7 +406,6 @@ def empty_call(
             "nob_pnet": results.event if self.has_dep(btag_weights_pnet) else None,
         },
     )
-
     return events, results
 
 
@@ -549,5 +539,4 @@ def increment_stats(
 
         if key in keys_for_stats:
             stats[key] += float(ak.sum(sel if is_num else weight[sel]))
-
     return events, results

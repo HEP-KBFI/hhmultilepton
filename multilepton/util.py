@@ -54,6 +54,11 @@ def IF_NANO_V15(self: ArrayFunction.DeferredColumn, func: ArrayFunction) -> Any 
 
 
 @deferred_column
+def IF_NOT_NANO_V15(self: ArrayFunction.DeferredColumn, func: ArrayFunction) -> Any | set[Any]:
+    return self.get() if func.config_inst.campaign.x.version != 15 else None
+
+
+@deferred_column
 def IF_NANO_GE_V10(self: ArrayFunction.DeferredColumn, func: ArrayFunction) -> Any | set[Any]:
     return self.get() if func.config_inst.campaign.x.version >= 10 else None
 
@@ -71,6 +76,11 @@ def IF_RUN_2(self: ArrayFunction.DeferredColumn, func: ArrayFunction) -> Any | s
 @deferred_column
 def IF_RUN_3(self: ArrayFunction.DeferredColumn, func: ArrayFunction) -> Any | set[Any]:
     return self.get() if func.config_inst.campaign.x.run == 3 else None
+
+
+@deferred_column
+def IF_RUN_3_NOT_NANO_V15(self: ArrayFunction.DeferredColumn, func: ArrayFunction) -> Any | set[Any]:
+    return self.get() if (func.config_inst.campaign.x.run == 3 and func.config_inst.campaign.x.version != 15) else None
 
 
 @deferred_column

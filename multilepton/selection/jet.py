@@ -18,9 +18,9 @@ from columnflow.columnar_util import (
     EMPTY_FLOAT, set_ak_column, sorted_indices_from_mask, mask_from_indices, flat_np_view, full_like,
 )
 
-# from multilepton.production.hhbtag import hhbtag
 from multilepton.selection.lepton import trigger_object_matching
-from multilepton.util import IF_RUN_2
+from multilepton.util import IF_RUN_2, IF_NOT_NANO_V15
+
 
 np = maybe_import("numpy")
 ak = maybe_import("awkward")
@@ -30,9 +30,9 @@ ak = maybe_import("awkward")
     uses={
         jet_id, fatjet_id,
         "fired_trigger_ids", "TrigObj.{pt,eta,phi}",
-        "Jet.{pt,eta,phi,mass,jetId}", IF_RUN_2("Jet.puId"),
-        "FatJet.{pt,eta,phi,mass,msoftdrop,jetId,subJetIdx1,subJetIdx2}",
-        "SubJet.{pt,eta,phi,mass,btagDeepB}",
+        "Jet.{pt,eta,phi,mass}", IF_NOT_NANO_V15("Jet.jetId"), IF_RUN_2("Jet.puId"),
+        "FatJet.{pt,eta,phi,mass,msoftdrop,subJetIdx1,subJetIdx2}", IF_NOT_NANO_V15("FatJet.jetId"),
+        "SubJet.{pt,eta,phi,mass}", IF_NOT_NANO_V15("SubJet.btagDeepB"),
     },
     produces={
         # hhbtag,
@@ -57,7 +57,7 @@ def jet_selection(
     https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD?rev=100#Jets
     """
     is_2016 = self.config_inst.campaign.x.year == 2016
-    ch_tautau = self.config_inst.get_channel("tautau")
+    ch_tautau = self.config_inst.get_channel("ctautau")
 
     # local jet index
     li = ak.local_index(events.Jet)
