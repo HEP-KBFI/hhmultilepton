@@ -28,24 +28,35 @@ For further questions please, contact t\*\*\*\*.l\*\*\*\*@no-spam-cern.ch.
 ## First time setup
 
 ```shell
-# clone the project
+# 1. clone the project
 git clone --recursive git@github.com:HEP-KBFI/hhmultilepton.git
 cd hhmultilepton
 
-# get a voms token
+# 2. get a voms token
 voms-proxy-init -voms cms -rfc -valid 196:00
 
-# copy the provided template to a new file (you can choose any name):
+# 3. copy the provided template to a new file (you can choose any <setup_name>):
 cp .setups/template.sh .setups/mydev.sh
 
-# open .setups/mydev.sh in your editor and adjust any environment variables or paths as needed for your local setup.
+# 4. open .setups/mydev.sh in your editor and adjust any environment variables or paths as needed for your local setup.
 # then source the main setup script with your custom setup name:
-source setup.sh mydev
-
-# if you choose not to use the provided template, you can still activate the environment directly:
-# in this case, the setup script will guide you interactively and request you to fill in the necessary environment variables (export commands) manually.
-#source setup.sh bla # bla should not be found under .steups/
+source setup.sh <setup_name> [sandbox_type]
 ```
+```bash 
+source setup.sh --help
+Arguments:
+  <setup_name>     Name of the setup (random name of your choice)
+  [sandbox_type]   Optional: choose between 'minimal' (default) or 'full'
+Examples:
+  source setup.sh mydev            # uses 'minimal' environment from (sandboxes/venv_multilepton.sh)
+  source setup.sh mydev full       # uses 'full' environment from (sandboxes/venv_multilepton_dev.sh) 
+```
+
+Note: If you prefer not to use the provided template, you can still activate the environment manually by running:
+source setup.sh `<setup_name>`
+In this case, `<setup_name>` should not already exist under the `.setups/` directory.
+When you run the command, the setup script will guide you interactively, prompting you to enter the required environment variables (as `export` commands). Once completed, these settings will be automatically saved to `.setups/<setup_name>.sh`.
+
 
 <img width="1336" height="506" alt="image" src="https://github.com/user-attachments/assets/29e6f810-e273-4b2e-9a80-02427e228298" />
 
@@ -62,8 +73,8 @@ I.e large outputs available in a remote reachable location, smaller ones on loca
 ```shell
 voms-proxy-init -voms cms -rfc -valid 196:00
 
-# source the setup and export env in the sorted file " .setups/dev.sh " in this case
-source setup.sh dev
+# source the setup and export env in the sorted file " .setups/mydev.sh " in this case
+source setup.sh mydev
 ```
 
 2. Try to run on 1 signal, 1 backgound and 1 data locally:

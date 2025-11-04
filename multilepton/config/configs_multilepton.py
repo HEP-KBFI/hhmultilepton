@@ -1079,16 +1079,15 @@ def add_config(
     add_external("lumi", {"golden":(goldenFile, "v1"), "normtag": (normtagFile, "v1")})
     add_external("jet_jerc", (localizePOGSF(year, "JME", "jet_jerc.json.gz"), "v1"))
     add_external("jet_veto_map", (localizePOGSF(year, "JME", "jetvetomaps.json.gz"), "v1"))
-    add_external("btag_sf_corr", (localizePOGSF(year, "BTV", "btagging.json.gz"), "v1"))
     add_external("muon_sf", (localizePOGSF(year, "MUO", "muon_Z.json.gz"), "v1"))
     add_external("electron_sf", (localizePOGSF(year, "EGM", f"electron{ver}.json.gz"), "v1"))
     
     getfromyear = year
-    if year == 2024: getfromyear = 2023 # correction still missing for 2024 workaround with 2023 preBix for now
+    if year == 2024: getfromyear = 2023 # these corrections are still missing for 2024 workaround with 2023 preBix for now
+    add_external("btag_sf_corr", (localizePOGSF(getfromyear, "BTV", "btagging.json.gz"), "v1"))
     add_external("tau_sf", (localizePOGSF(getfromyear, "TAU", f"{tauPOGJsonFile}"), "v1"))
     add_external("pu_sf", (localizePOGSF(getfromyear, "LUM", "puWeights.json.gz"), "v1"))
     add_external("met_phi_corr", (f"{os.path.dirname(os.path.abspath(__file__))}/../data/{metPOGJsonFile}", "v1"))
-    #add_external("met_phi_corr", (localizePOGSF(getfromyear, "JME", f"{metPOGJsonFile}"), "v1"))
 
     # run specific files
     if run == 2:
