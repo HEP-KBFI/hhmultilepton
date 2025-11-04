@@ -286,7 +286,8 @@ def add_config(
             lumi_value = lumi_map.get(key)
         else:
             lumi_value = lumi_info
-        lumi_unc = year_data.get("luminosity-uncertainties", {})
+        lumi_unc_list = year_data.get("luminosity-uncertainties", [])
+        lumi_unc = {list(d.keys())[0]: list(d.values())[0]*1j for d in lumi_unc_list}
         return lumi_value, lumi_unc 
    
     def _names_from_tag(tag):
@@ -323,7 +324,7 @@ def add_config(
         e_prefix = 'UL-' if run == 2 else ''
         
         cfg.x.electron_sf_names = ElectronSFConfig(
-            correction="{e_prefix}Electron-ID-SF",
+            correction=f"{e_prefix}Electron-ID-SF",
             campaign=f"{year}{e_postfix}",
             working_point="wp80iso",
         )
@@ -597,8 +598,9 @@ def add_config(
     cfg.x.btag_sf_jec_sources = btagJECsources
     
     lumi_value, lumi_unc = set_luminosity(campaign, year, analysis_data)
-    #cfg.x.luminosity = Number(lumi_value, lumi_unc)
-   
+    cfg.x.luminosity = Number(lumi_value, lumi_unc)
+    cfg.x.minbias_xs = Number(69.2, 0.046j)
+
     ConfigureTaus(cfg, run, campaign)
     ConfigureElectrons(cfg, run, year, campaign)
     ConfigureMuons(cfg, run, year, campaign)
@@ -828,7 +830,7 @@ def add_config(
             "AK8PUPPI_TightLeptonVeto": 3,
         })
     
-    cfg.x.jet_trigger_corrector = "jetlegSFs" 
+    cfg.x.jet_trigger_corrector = "jetleg60" 
     
     #=============================================
     # met settings
@@ -1074,7 +1076,6 @@ def add_config(
     # (versions in the end are for hashing in cases where file contents changed but paths did not)
     goldenFile = analysis_data['years'][year]["certified_lumi_file"]
     normtagFile = analysis_data['years'][year]["normtag"]
-    triggerFile = analysis_data["external_files"]["trigger"]
 
     add_external("lumi", {"golden":(goldenFile, "v1"), "normtag": (normtagFile, "v1")})
     add_external("jet_jerc", (localizePOGSF(year, "JME", "jet_jerc.json.gz"), "v1"))
@@ -1083,12 +1084,25 @@ def add_config(
     add_external("electron_sf", (localizePOGSF(year, "EGM", f"electron{ver}.json.gz"), "v1"))
     
     getfromyear = year
-    if year == 2024: getfromyear = 2023 # these corrections are still missing for 2024 workaround with 2023 preBix for now
+    if year == 2024: 
+        getfromyear = 2023 # these corrections are still missing for 2024 workaround with 2023 preBPix for now
+        tau_pog_suffix = "preBPix"
     add_external("btag_sf_corr", (localizePOGSF(getfromyear, "BTV", "btagging.json.gz"), "v1"))
     add_external("tau_sf", (localizePOGSF(getfromyear, "TAU", f"{tauPOGJsonFile}"), "v1"))
     add_external("pu_sf", (localizePOGSF(getfromyear, "LUM", "puWeights.json.gz"), "v1"))
     add_external("met_phi_corr", (f"{os.path.dirname(os.path.abspath(__file__))}/../data/{metPOGJsonFile}", "v1"))
-
+    add_external("trigger_sf", Ext(f"{os.path.dirname(os.path.abspath(__file__))}/../data/TriggerScaleFactors/{getfromyear}{tau_pog_suffix}",
+        subpaths=DotDict(
+            muon="temporary_MuHlt_abseta_pt.json.gz",
+            cross_muon="CrossMuTauHlt.json.gz",
+            electron="electronHlt.json.gz",
+            cross_electron="CrossEleTauHlt.json.gz",
+            tau=f"tau_trigger_DeepTau2018v2p5_{getfromyear}{tau_pog_suffix}.json.gz",
+            jet=f"ditaujet_jetleg60_{getfromyear}{tau_pog_suffix}.json.gz",
+            ),
+            version="v1",
+        ))
+ 
     # run specific files
     if run == 2:
         add_external("tau_trigger_sf", (localizePOGSF(year, "TAU", "tau.json.gz"), "v1"))
@@ -1096,7 +1110,7 @@ def add_config(
         # electron energy correction and smearing
         add_external("electron_ss", (localizePOGSF(year, "EGM", f"electronSS_EtDependent{ver}.json.gz"), "v1"))
         add_external("jet_id", (localizePOGSF(year, "JME", "jetid.json.gz"), "v1"))
-        
+            
     #=============================================
     # reductions
     #=============================================

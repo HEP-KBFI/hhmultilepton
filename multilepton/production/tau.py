@@ -4,7 +4,6 @@
 Tau scale factor production.
 """
 import law
-
 import functools
 
 from columnflow.production import Producer, producer
@@ -15,9 +14,8 @@ from columnflow.types import Any
 
 ak = maybe_import("awkward")
 np = maybe_import("numpy")
-
-# helper
 set_ak_column_f32 = functools.partial(set_ak_column, value_type=np.float32)
+
 
 @producer(
     uses={
@@ -36,11 +34,8 @@ set_ak_column_f32 = functools.partial(set_ak_column, value_type=np.float32)
             "mu_0p0To0p4", "mu_0p4To0p8", "mu_0p8To1p2", "mu_1p2To1p7", "mu_1p7To2p3",
         ]
     },
-    # only run on mc
     mc_only=True,
-    # function to determine the correction file
     get_tau_file=(lambda self, external_files: external_files.tau_sf),
-    # function to determine the tau tagger name
     get_tau_tagger=(lambda self: self.config_inst.x.tau_tagger),
 )
 def tau_weights(self: Producer, events: ak.Array, **kwargs) -> ak.Array:
@@ -140,14 +135,17 @@ def tau_weights(self: Producer, events: ak.Array, **kwargs) -> ak.Array:
         sf_tau_dm1 = sf_nom.copy()
         sf_tau_dm10 = sf_nom.copy()
         sf_tau_dm11 = sf_nom.copy()
+        
         tau_dm0_mask = tau_mask & (dm == 0)
         tau_dm1_mask = tau_mask & (dm == 1)
         tau_dm10_mask = tau_mask & (dm == 10)
         tau_dm11_mask = tau_mask & (dm == 11)
+        
         sf_tau_dm0[tau_dm0_mask] = self.id_vs_jet_corrector(*tau_args(tau_dm0_mask, direction))
         sf_tau_dm1[tau_dm1_mask] = self.id_vs_jet_corrector(*tau_args(tau_dm1_mask, direction))
         sf_tau_dm10[tau_dm10_mask] = self.id_vs_jet_corrector(*tau_args(tau_dm10_mask, direction))
         sf_tau_dm11[tau_dm11_mask] = self.id_vs_jet_corrector(*tau_args(tau_dm11_mask, direction))
+        
         events = set_ak_column_f32(events, f"tau_weight_jet_dm0_{direction}", reduce_mul(sf_tau_dm0))
         events = set_ak_column_f32(events, f"tau_weight_jet_dm1_{direction}", reduce_mul(sf_tau_dm1))
         events = set_ak_column_f32(events, f"tau_weight_jet_dm10_{direction}", reduce_mul(sf_tau_dm10))
@@ -209,6 +207,7 @@ def tau_weights_setup(
     tau_file = self.get_tau_file(reqs["external_files"].files)
     correction_set = load_correction_set(tau_file)
     tagger_name = self.get_tau_tagger()
+    
     self.id_vs_jet_corrector = correction_set[f"{tagger_name}VSjet"]
     self.id_vs_e_corrector = correction_set[f"{tagger_name}VSe"]
     self.id_vs_mu_corrector = correction_set[f"{tagger_name}VSmu"]
@@ -228,9 +227,7 @@ def tau_weights_setup(
         "tau_trigger_eff_{data,mc}_{etau,mutau,tautau,tautaujet}",
         "tau_trigger_eff_{data,mc}_{etau,mutau,tautau,tautaujet}_dm{0,1,10,11}_{up,down}",
     },
-    # only run on mc
     mc_only=True,
-    # function to determine the correction file
     get_tau_file=(lambda self, external_files: external_files.tau_sf),
     get_tau_corrector=(lambda self: self.config_inst.x.tau_trigger_corrector),
 )
@@ -251,9 +248,9 @@ def tau_trigger_efficiencies(self: Producer, events: ak.Array, **kwargs) -> ak.A
      - https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration/-/blob/849c6a6efef907f4033715d52290d1a661b7e8f9/POG/TAU
     """
     # get channels from the config
-    ch_etau = self.config_inst.get_channel("etau")
-    ch_mutau = self.config_inst.get_channel("mutau")
-    ch_tautau = self.config_inst.get_channel("tautau")
+    ch_etau = self.config_inst.get_channel("cetau")
+    ch_mutau = self.config_inst.get_channel("cmutau")
+    ch_tautau = self.config_inst.get_channel("ctautau")
 
     # find out which tautau triggers are passed
     tautau_trigger_passed = ak.zeros_like(events.channel_id, dtype=np.bool)
@@ -290,12 +287,11 @@ def tau_trigger_efficiencies(self: Producer, events: ak.Array, **kwargs) -> ak.A
         (channel_id == ch_tautau.id) &
         ((ak.local_index(events.Tau) == 0) | (ak.local_index(events.Tau) == 1))
     )
-    # TODO: add additional phase space requirements for tautauvbf
     tautau_mask = default_tautau_mask & tautau_trigger_passed
     flat_tautau_mask = flat_np_view(tautau_mask, axis=1)
     tautaujet_mask = default_tautau_mask & tautaujet_trigger_passed
     flat_tautaujet_mask = flat_np_view(tautaujet_mask, axis=1)
-    # not existing yet
+    # TODO: add additional phase space requirements for tautauvbf
     # tautauvbf_mask = flat_np_view(default_tautau_mask & tautauvbf_trigger_passed, axis=1)
     etau_mask = (channel_id == ch_etau.id) & cross_triggered & (ak.local_index(events.Tau) == 0)
     flat_etau_mask = flat_np_view(etau_mask, axis=1)
@@ -354,7 +350,6 @@ def tau_trigger_efficiencies(self: Producer, events: ak.Array, **kwargs) -> ak.A
                         f"tau_trigger_eff_{kind}_{ch}_dm{decay_mode}_{direction}",
                         sf_unc,
                     )
-
     return events
 
 
@@ -377,5 +372,4 @@ def tau_trigger_efficiencies_setup(
     tau_file = self.get_tau_file(reqs["external_files"].files)
     corrector_name = self.get_tau_corrector()
     self.tau_trig_corrector = load_correction_set(tau_file)[corrector_name]
-    # check versions
     assert self.tau_trig_corrector.version in [0, 1]

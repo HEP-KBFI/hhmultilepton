@@ -11,8 +11,8 @@ years:
       - 2016postVFP: 16977.701784453 # pb 
     luminosity-error: 0.01
     luminosity-uncertainties:
-      - lumi_13TeV_2016: 0.01j
-      - lumi_13TeV_correlated: 0.006j
+      - lumi_13TeV_2016: 0.01
+      - lumi_13TeV_correlated: 0.006
     certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions16/13TeV/Legacy_2016/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt
     normtag: /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json
   2017:
@@ -21,9 +21,9 @@ years:
     luminosity: 41529.152060112 # pb
     luminosity-error: 0.02
     luminosity-uncertainties:
-      - lumi_13TeV_2017: 0.02j
-      - lumi_13TeV_1718: 0.006j
-      - lumi_13TeV_correlated: 0.009j
+      - lumi_13TeV_2017: 0.02
+      - lumi_13TeV_1718: 0.006
+      - lumi_13TeV_correlated: 0.009
     certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions17/13TeV/Legacy_2017/Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt
     normtag: /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json
   2018:
@@ -32,9 +32,9 @@ years:
     luminosity: 59740.565201546 # pb
     luminosity-error: 0.015
     luminosity-uncertainties:
-      - lumi_13TeV_2018: 0.015j
-      - lumi_13TeV_1718: 0.002j
-      - lumi_13TeV_correlated: 0.02j
+      - lumi_13TeV_2018: 0.015
+      - lumi_13TeV_1718: 0.002
+      - lumi_13TeV_correlated: 0.02
     certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions18/13TeV/Legacy_2018/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt
     normtag: /cvmfs/cms-bril.cern.ch/cms-lumi-pog/Normtags/normtag_PHYSICS.json
   2022: 
@@ -45,7 +45,7 @@ years:
       - 2022postEE: 26671.7  # pb
     luminosity-error: 0.014
     luminosity-uncertainties:
-      - lumi_13p6TeV_correlated: 0.014j
+      - lumi_13p6TeV_correlated: 0.014
     certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions22/Cert_Collisions2022_355100_362760_Golden.json
     normtag: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Run3/normtag_BRIL.json
   2023: 
@@ -56,7 +56,7 @@ years:
       - 2023postBPix: 9451.0  # pb
     luminosity-error: 0.013
     luminosity-uncertainties:
-      - lumi_13p6TeV_correlated: 0.013j
+      - lumi_13p6TeV_correlated: 0.013
     certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions23/Cert_Collisions2023_366442_370790_Golden.json
     normtag: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Run3/normtag_BRIL.json
   2024:
@@ -65,7 +65,7 @@ years:
     luminosity: 1090.08  # pb
     luminosity-error: 0.013
     luminosity-uncertainties:
-      - lumi_13p6TeV_correlated: 0.013j
+      - lumi_13p6TeV_correlated: 0.013
     certified_lumi_file: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Collisions24/Cert_Collisions2024_378981_386951_Golden.json
     normtag: https://cms-service-dqmdc.web.cern.ch/CAF/certification/Run3/normtag_BRIL.json
 
@@ -204,6 +204,7 @@ datasets:
       cmsdb: 
         - dy_m4to10_amcatnlo
         - dy_m10to50_amcatnlo
+        - dy_mumu_m800to1500_powheg
         - dy_m50toinf_amcatnlo
         - dy_m50toinf_0j_amcatnlo
         - dy_m50toinf_1j_amcatnlo
@@ -317,11 +318,9 @@ datasets:
 #      - z_qq2j_pt400to600_amcatnlo
 #      - z_qq2j_pt600toinf_amcatnlo
  
-  
 external_files:
   pog: "/cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration/POG"
   hh_btag_repo: "/afs/cern.ch/work/m/mrieger/public/hbt/external_files/hh-btag-master-d7a71eb3.tar.gz"
-  trigger: "https://gitlab.cern.ch/cclubbtautau/AnalysisCore/-/archive/59ae66c4a39d3e54afad5733895c33b1fb511c47/AnalysisCore-59ae66c4a39d3e54afad5733895c33b1fb511c47.tar.gz"  # noqa: E50
 
 channels:
   etau:

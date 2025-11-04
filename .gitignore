@@ -31,6 +31,7 @@ docs/_build
 tmp
 store
 software
+columnflow_venv
 data
 .data
 .law
