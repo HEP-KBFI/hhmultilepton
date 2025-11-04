@@ -58,13 +58,13 @@ In this case, `<setup_name>` should not already exist under the `.setups/` direc
 When you run the command, the setup script will guide you interactively, prompting you to enter the required environment variables (as `export` commands). Once completed, these settings will be automatically saved to `.setups/<setup_name>.sh`.
 
 
-<img width="1336" height="506" alt="image" src="https://github.com/user-attachments/assets/29e6f810-e273-4b2e-9a80-02427e228298" />
+<img width="1336" height="506" alt="image" src="img.png" />
 
 
 Code can now be run but first storage locations for the tasks outputs should be checked as configured [here](https://github.com/HEP-KBFI/hhmultilepton/blob/master/law_outputs.cfg#L26-L90). Currently outputs point to the user store of the `T2_EE_Estonia on manivald` so that outputs are also accessible remotely, but we will likely adapt this over time depending on the output.
 I.e large outputs available in a remote reachable location, smaller ones on local stores. Larger ones likely also split by user/cluster so that central versions can be reused.
 
-**Important For development on lxplus "i strongly" advise to change `wlcg_fs_manivald` to `wlcg_fs_cernbox` in the beginning.**
+**For development on lxplus "i strongly" advise to change `wlcg_fs_manivald` to `wlcg_fs_cernbox` in the beginning.**
 
 ## Usage 
 
@@ -90,9 +90,9 @@ law run cf.PlotVariables1D \
 3. And if the above run sucessfully, you can proceed to submit jobs via slurm/condor adding 
 
 ```shell
-    --workflow slurm \ # or
-    --workflow htcondor \ # or
-    --workflow crab \     # to be tested!?
+    --workflow slurm \     # or
+    --workflow htcondor \  # or
+    --workflow crab \      # to be tested!?
 ```
 
 ## Documentation
