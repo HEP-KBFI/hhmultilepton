@@ -14,9 +14,6 @@ setup_multilepton() {
     #   1. A "name" of setup.
     #   2. "minimal" or "full" setup, affect which venv from the sandbox will be sourced
     #
-    # Optinally preconfigured environment variables:
-    #   None yet.
-    #
     # Variables defined by the setup and potentially required throughout the analysis:
     #   MULTILEPTON_BASE
     #       The absolute analysis base directory. Used to infer file locations relative to it.

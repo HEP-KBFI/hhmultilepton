@@ -20,13 +20,12 @@ export LAW_CMS_VO="cms"
 export CF_CRAB_STORAGE_ELEMENT="T2_EE_Estonia"
 export CF_SLURM_FLAVOR="manivald"
 export CF_SLURM_PARTITION="main"
-export CF_WLCG_CACHE_ROOT="/local/$CF_CERN_USER"
-export CF_WLCG_CACHE_ROOT="$CF_WLCG_CACHE_ROOT/HHMultilepton_Run3/cf_scratch"
-export CF_JOB_BASE="$CF_WLCG_CACHE_ROOT/HHMultilepton_Run3/jobs"
+export CF_WLCG_CACHE_ROOT="/local/$CF_CERN_USER/HHMultilepton_Run3/cf_scratch"
+export CF_JOB_BASE="$/local/$CF_CERN_USER/HHMultilepton_Run3/jobs"
 export CF_CRAB_BASE_DIRECTORY="/store/user/$CF_CERN_USER/cf_crab_outputs"
-export TMPDIR="/scratch/$CF_WLCG_CACHE_ROOT/"
+export TMPDIR="/scratch/local/$CF_CERN_USER"
 
 # on lxplus
 #export CF_CRAB_STORAGE_ELEMENT="T2_CH_CERN"
-#export CF_WLCG_CACHE_ROOT="/eos/$CF_CERN_USER"
 #export CF_HTCONDOR_FLAVOR="cern_el9"   # or "cern" for older versions of lxplus not using ELMA9
+#export CF_WLCG_CACHE_ROOT="/eos/user/$CF_CERN_USER_FIRSTCHAR/$CF_CERN_USER/HHMultilepton_Run3/cf_scratch"
