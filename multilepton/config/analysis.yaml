@@ -73,7 +73,7 @@ custom_processes:
 
 datasets:
   data:
-    streams: &streams [e, mu, tau]
+    streams: &streams [e, mu, tau, muoneg]
     2022:
       - preEE:
           periods: &preEE_periods [c, d]

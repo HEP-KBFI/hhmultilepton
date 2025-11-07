@@ -96,7 +96,7 @@ class AnalysisConfig:
         else:
             return lumis
    
-    def get_process_list(self, process_type="all"):
+    def get_dataset_list(self, process_type="all"):
         """
         Return a flattened list of all 'cmsdb' entries under 'signal' and/or 'background'.
         Args:
@@ -105,7 +105,7 @@ class AnalysisConfig:
             list[str]: List of process names (from cmsdb entries)
         """
         datasets = self.data.get("datasets", {})
-        process_names = []
+        dataset_names = []
         categories = ["signal", "background"] if process_type == "all" else [process_type]
     
         for category in categories:
@@ -117,7 +117,7 @@ class AnalysisConfig:
                 if isinstance(node, dict):
                     for key, value in node.items():
                         if key == "cmsdb" and isinstance(value, list):
-                            process_names.extend(value)
+                            dataset_names.extend(value)
                         else:
                             extract_cmsdb_entries(value)
                 elif isinstance(node, list):
@@ -125,7 +125,7 @@ class AnalysisConfig:
                     for item in node:
                         extract_cmsdb_entries(item)
             extract_cmsdb_entries(category_data)
-        return sorted(set(process_names))
+        return sorted(set(dataset_names))
 
 
 # Load analysis configuration
@@ -260,7 +260,7 @@ def add_config(
     # get all root processes
     all_processes_from_campaign = get_root_processes_from_campaign(campaign)
     #for proc in list(set(all_processes_from_campaign)):
-    #    print( proc) #proc.name) #, proc.id) 
+    #    print( proc, proc.name , proc.id) 
     
     # create a config by passing the campaign
     cfg = od.Config(
@@ -272,7 +272,7 @@ def add_config(
     #=============================================
     # helpers
     #=============================================
-    def set_luminosity(campaign, year, analysis_data):
+    def ConfigureLuminosity(cfg, campaign, year, analysis_data):
         year_data = analysis_data["years"].get(year)
         if not year_data:
             raise ValueError(f"Year {year} not found in analysis.yaml")
@@ -288,10 +288,8 @@ def add_config(
             lumi_value = lumi_info
         lumi_unc_list = year_data.get("luminosity-uncertainties", [])
         lumi_unc = {list(d.keys())[0]: list(d.values())[0]*1j for d in lumi_unc_list}
-        return lumi_value, lumi_unc 
-   
-    def _names_from_tag(tag):
-        return [s.name for s in cfg.shifts if s.has_tag(tag)]
+        cfg.x.luminosity = Number(lumi_value, lumi_unc)
+        return cfg 
 
     def ConfigureMuons(cfg, run, year, campaign):
         if run == 2:
@@ -523,6 +521,9 @@ def add_config(
         ]
         return cfg
 
+    def _names_from_tag(tag):
+        return [s.name for s in cfg.shifts if s.has_tag(tag)]
+    
     def get_datasets_by_tag(tag):
         """Return converted dataset processes matching a given tag."""
         return [
@@ -531,6 +532,24 @@ def add_config(
             if dataset.has_tag(tag)
         ]
 
+    def prune_datasets_node(node):
+        """Recursively clean cmsdb lists, keeping only valid datasets."""
+        if isinstance(node, dict):
+            new_node = {}
+            for k, v in node.items():
+                if k == "cmsdb" and isinstance(v, list):
+                    filtered = [ds for ds in v if ds in valid_datasets_set]
+                    new_node[k] = filtered
+                else:
+                    pruned = prune_datasets_node(v)
+                    if pruned is not None:
+                        new_node[k] = pruned
+            return new_node
+        elif isinstance(node, list):
+            pruned_list = [prune_datasets_node(item) for item in node]
+            return pruned_list
+        return node
+        
     def add_external(name, value):
         if isinstance(value, dict):
             value = DotDict.wrap(value)
@@ -589,18 +608,14 @@ def add_config(
     cfg.x.default_variables = ("njet", "nlep")
     cfg.x.default_hist_producer = "default"
     cfg.x.external_files = DotDict() 
+    cfg.x.minbias_xs = Number(69.2, 0.046j)
     
-    # get btag working points 
-    cfg.x.btag_working_points = bTagWorkingPoints(year, run, campaign)
-
     btagJECsources = analysis_data.get("btag_sf_jec_sources", [])
     btagJECsources += [f"Absolute_{year}", f"BBEC1_{year}", f"EC2_{year}", f"HF_{year}", f"RelativeSample_{year}", ""] 
+    cfg.x.btag_working_points = bTagWorkingPoints(year, run, campaign)
     cfg.x.btag_sf_jec_sources = btagJECsources
     
-    lumi_value, lumi_unc = set_luminosity(campaign, year, analysis_data)
-    cfg.x.luminosity = Number(lumi_value, lumi_unc)
-    cfg.x.minbias_xs = Number(69.2, 0.046j)
-
+    ConfigureLuminosity(cfg, campaign, year, analysis_data)
     ConfigureTaus(cfg, run, campaign)
     ConfigureElectrons(cfg, run, year, campaign)
     ConfigureMuons(cfg, run, year, campaign)
@@ -609,20 +624,25 @@ def add_config(
     #=============================================
     # processes and datasets - using YAML configuration
     #=============================================
-    dataset_names = []
-    datasets_config = analysis_data.get("datasets", {})
-
+    dataset_names = process_names = {'data': [], 'signal': [], 'background': []}
+    all_datasets_in_config = analysis_cfg.get_dataset_list('all')
+    valid_datasets = [d for d in all_datasets_in_config if campaign.has_dataset(d)]
+    valid_datasets_set = set(valid_datasets)
+    datasets_config = analysis_cfg.data.get("datasets", {})
+    datasets_config = prune_datasets_node(datasets_config)
+    analysis_cfg.data["datasets"] = datasets_config
+    
     # Loop over signal and background
     for dtype in ['signal', 'background']:
-        for dataset_name in analysis_cfg.get_process_list(dtype):
+        for dataset_name in analysis_cfg.get_dataset_list(dtype):
             tags = []
             proc, id = convert_dataset_to_process(dataset_name, campaign, all_processes_from_campaign)
             if id is None or not campaign.has_dataset(dataset_name):
                 continue
-            #print( 'working on ....', dataset_name , proc, id, campaign.has_dataset(dataset_name))
-            dataset_names.append(dataset_name)
             cfg.add_process(proc, id)
             dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
+            dataset_names[dtype].append(dataset_name)
+            process_names[dtype].append(proc)
             # Add tags to the process
             if law.util.multi_match(dataset.name, [
                 r"^(ww|wz|zz)_.*pythia$",
@@ -652,7 +672,6 @@ def add_config(
                     info.n_files = min(info.n_files, limit_dataset_files)
     
     # Add data
-    process_names = []
     streams = datasets_config["data"]["streams"]
     for y, year_cfg in datasets_config["data"].items():
         if y == "streams" or int(y) != campaign.x.year:
@@ -678,15 +697,17 @@ def add_config(
                                     for stream in streams
                                     for period in periods],
                                     )]
-                dataset_names += requested_data 
-                for dataset_name in requested_data:
+                valid_datasets = [d for d in requested_data if campaign.has_dataset(d)]
+                valid_datasets_set = set(valid_datasets)
+                dataset_names['data'] += valid_datasets_set
+                for dataset_name in valid_datasets_set:
                     dataset = cfg.add_dataset(campaign.get_dataset(dataset_name))
                     proc = '_'.join(dataset_name.split('_')[:2])
                     id = next((p.id for p in all_processes_from_campaign if p.name == proc), None)
                     if id is None:
                         raise ValueError(f"No process found with name '{proc}' in run{run} campaign: {campaign}")
-                    if proc not in process_names:
-                        process_names +=[proc]
+                    if proc not in process_names['data']:
+                        process_names['data'] +=[proc]
                         cfg.add_process(proc, id)
                     if dataset.name.startswith("data_e_"):
                         dataset.add_tag({"etau", "emu_from_e", "ee"})
@@ -694,6 +715,8 @@ def add_config(
                         dataset.add_tag({"mutau", "emu_from_mu", "mumu"})
                     if dataset.name.startswith("data_tau_"):
                         dataset.add_tag({"tautau"})
+                    if dataset.name.startswith("data_muoneg_"):
+                        dataset.add_tag({"mue"})
                     # Optional: special tag for broken MET filter in 2022
                     # bad ecalBadCalibFilter MET filter in 2022 data
                     # https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2?rev=172#ECal_BadCalibration_Filter_Flag
@@ -718,15 +741,17 @@ def add_config(
     }
 
     cfg.x.process_groups = {
-        "nonresonant_ggf": (nonresonant_ggf := analysis_data['datasets']['signal']['nonresonant']['ggf']['cmsdb']),
-        "nonresonant_vbf": (nonresonant_vbf := analysis_data['datasets']['signal']['nonresonant']['vbf']['cmsdb']),
+        "nonresonant_ggf": (nonresonant_ggf := datasets_config['signal']['nonresonant']['ggf']['cmsdb']),
+        "nonresonant_vbf": (nonresonant_vbf := datasets_config['signal']['nonresonant']['vbf']['cmsdb']),
         "nonresonant": [*nonresonant_ggf, *nonresonant_vbf],
-        "resonant": (resonant := analysis_data['datasets']['signal']['resonant']['cmsdb']),
-        "signal": (all_signals := [*resonant, *nonresonant_vbf, *nonresonant_ggf]),
-        "backgrounds": (all_backgrounds := analysis_data['datasets']['background'].keys()),
-        # decay channel for all modes
+        "resonant": (resonant := datasets_config['signal']['resonant']['cmsdb']),
+        "all_data":(process_names['data']),
+        "all_signals": (all_signals := [*resonant, *nonresonant_vbf, *nonresonant_ggf]),
+        "all_backgrounds": (all_backgrounds := process_names['background']),
+        # decay channel for all modes to pass
+        # ggf_4v, ggf_4t, ggf_2t2v, vbf_4v, vbf_4t, vbf_2t2v
          **nonresonant_signal_groups,
-        # decay modes merged for productions 
+        # decay modes merged for productions to pass
         "4v": [*nonresonant_signal_groups["ggf_4v"], *nonresonant_signal_groups["vbf_4v"]],
         "4t": [*nonresonant_signal_groups["ggf_4t"], *nonresonant_signal_groups["vbf_4t"]],
         "2t2v": [*nonresonant_signal_groups["ggf_2t2v"], *nonresonant_signal_groups["vbf_2t2v"]],
@@ -739,14 +764,24 @@ def add_config(
     #cfg.x.w_lnu_stitching = {
     #   "incl": build_stitching_config("w_lnu", cfg.datasets.n.w_lnu_amcatnlo),}
 
+    # Background dataset groups
+    background_groups = {}
+    backgrounds = datasets_config.get('background', {})
+    for bkg_name, bkg_cfg in backgrounds.items():
+        cmsdb_entries = bkg_cfg.get('cmsdb', [])
+        if cmsdb_entries:
+            background_groups[bkg_name] = cmsdb_entries
+     
     # dataset groups for conveniently looping over certain datasets
     # (used in wrapper_factory and during plotting)
     cfg.x.dataset_groups = {
-        "data": (data_group := [dataset.name for dataset in cfg.datasets if dataset.is_data]),
-        "backgrounds": (backgrounds := [
+        "all_data": (data_group := [dataset.name for dataset in cfg.datasets if dataset.is_data]),
+        "all_signals": (signals_group := [dataset.name for dataset in cfg.datasets if dataset.has_tag("signal")]),
+        "all_backgrounds": (backgrounds := [
             dataset.name for dataset in cfg.datasets
             if dataset.is_mc and not dataset.has_tag("signal")
         ]),
+        **background_groups, # so basically the keys in the yaml datasets:background:
         "backgrounds_unstitched": (backgrounds_unstitched := [
             dataset.name for dataset in cfg.datasets
             if (
@@ -1252,6 +1287,4 @@ def add_config(
     add_met_filters(cfg)
     add_triggers(cfg)
     
-    #for dataset in cfg.datasets:
-    #    print( dataset.name)
     return cfg

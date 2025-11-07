@@ -558,9 +558,7 @@ def add_variables(config: od.Config) -> None:
 # helper to add a variable to the config with some defaults
 def add_variable(config: od.Config, *args, **kwargs) -> od.Variable:
     kwargs.setdefault("null_value", EMPTY_FLOAT)
-    # create the variable
     variable = config.add_variable(*args, **kwargs)
-    # defaults
     if not variable.has_aux("underflow"):
         variable.x.underflow = True
     if not variable.has_aux("overflow"):
