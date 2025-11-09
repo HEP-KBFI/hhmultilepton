@@ -1,14 +1,15 @@
 law run cf.PlotVariables1D \
-    --version testnanov15_2024__ver4 \
+    --version prod1 \
     --producers default \
     --variables nmu \
     --categories ceormu \
-    --datasets dy_mumu_m800to1500_powheg \
+    --datasets all_backgrounds \
     --view-cmd imgcat \
     --configs 24_v15_central \
+    --workflow slurm \
+    --parallel-jobs 200 \
     $1 
-    #--workflow slurm \ 
-    #--parallel-jobs 300 \ 
+    #--version testnanov15_2024__ver4 \
     #--limit-dataset-files 1 \ # work-in-progress, limit the number of files to 1
 
 # options: 
