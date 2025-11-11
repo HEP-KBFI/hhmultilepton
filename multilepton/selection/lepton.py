@@ -17,7 +17,7 @@ from columnflow.columnar_util import (
 )
 from columnflow.util import maybe_import
 
-from multilepton.util import IF_NANO_V9, IF_NANO_GE_V10, IF_NANO_V12, IF_NANO_V14
+from multilepton.util import IF_NANO_V9, IF_NANO_GE_V10, IF_NANO_V12, IF_NANO_V14, IF_NANO_V15
 from multilepton.config.util import Trigger
 
 np = maybe_import("numpy")
@@ -86,6 +86,7 @@ def update_channel_ids(
         "Jet.btagDeepFlavB",
         IF_NANO_V12("Electron.mvaTTH"),
         IF_NANO_V14("Electron.promptMVA"),
+        IF_NANO_V15("Electron.promptMVA"),
         IF_NANO_V9("Electron.mvaFall17V2{Iso_WP80,Iso_WP90}"),
         IF_NANO_GE_V10("Electron.{mvaIso_WP80,mvaIso_WP90}"),
     },
