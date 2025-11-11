@@ -66,7 +66,7 @@ def add_categories(config: od.Config) -> None:
     _add_category(config, name="cmu3tau", id=31, selection="cat_mu3tau", label=config.channels.n.cmu3tau.label)
     _add_category(config, name="c4tau", id=32, selection="cat_4tau", label=config.channels.n.c4tau.label)
     # 2-leptons 0 or 1 taus channels
-   _add_category(config, name="c2e0or1tau", id=33, selection="cat_c2e0or1tau", label=config.channels.n.c2e0or1tau.label)
+    _add_category(config, name="c2e0or1tau", id=33, selection="cat_c2e0or1tau", label=config.channels.n.c2e0or1tau.label)
     _add_category(config, name="cemu0or1tau", id=34, selection="cat_cemu0or1tau", label=config.channels.n.cemu0or1tau.label)
     _add_category(config, name="c2mu0or1tau", id=35, selection="cat_c2mu0or1tau", label=config.channels.n.c2mu0or1tau.label)
     # Loose category for BDT trainning + tight + trigmatch
