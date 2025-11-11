@@ -1,16 +1,23 @@
 law run cf.PlotVariables1D \
-    --version prod1 \
+    --version testnanov15_2024__ver4 \
     --producers default \
     --variables nmu \
     --categories ceormu \
-    --datasets all_backgrounds \
+    --datasets data_mu_e \
     --view-cmd imgcat \
     --configs 24_v15_central \
     --workflow slurm \
     --parallel-jobs 200 \
     $1 
-    #--version testnanov15_2024__ver4 \
-    #--limit-dataset-files 1 \ # work-in-progress, limit the number of files to 1
+
+    #--version prod1 \
+    #--datasets all_backgrounds \
+    
+    # FIXME to test out the functionality of these
+    #--limit-dataset-files 1 \
+    #--log-file slurm
+    # --workers 6 
+    # --pilot 
 
 # options: 
 

@@ -248,7 +248,7 @@ def add_config(
     # gather campaign data
     run = campaign.x.run
     year = campaign.x.year
-        
+    
     # --- basic configuration validations ---
     if run not in {2, 3}:
         raise ValueError(f"Invalid run: {run}. Expected 2 or 3.")
