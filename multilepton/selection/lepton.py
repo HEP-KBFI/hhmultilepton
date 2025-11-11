@@ -265,6 +265,7 @@ def electron_trigger_matching(
         "Jet.btagDeepFlavB",
         IF_NANO_V12("Muon.mvaTTH"),
         IF_NANO_V14("Muon.promptMVA"),
+        IF_NANO_V15("Muon.promptMVA"),
     },
     exposed=False,
 )
