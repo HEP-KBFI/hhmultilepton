@@ -28,8 +28,22 @@ def add_categories(config: od.Config) -> None:
     _add_category(config, name="cmumu", id=5, selection="cat_mumu", label=config.channels.n.cmumu.label)
     _add_category(config, name="cemu", id=6, selection="cat_emu", label=config.channels.n.cemu.label)
     # 3l/4l inclusive channels
-    _add_category(config, name="c3l0tau", id=1001, selection="cat_3l0tau", label="$3\ell 0\tau_h$")  # noqa: W605
-    _add_category(config, name="c4l", id=1002, selection="cat_4l", label="$4\ell$")  # noqa: W605
+    _add_category(config, name="cat3l0tau_SR", id=1001, selection="cat_3l0tau_SR", label=r"$3\ell 0\tau_h$ SR")
+    _add_category(config, name="cat3l0tau_SB", id=1002, selection="cat_3l0tau_SB", label=r"$3\ell 0\tau_h$ SB")
+    _add_category(config, name="cat4l_SR", id=1003, selection="cat_4l_SR", label=r"$4\ell$ SR")
+    _add_category(config, name="cat4l_SB", id=1004, selection="cat_4l_SB", label=r"$4\ell$ SB")
+    _add_category(config, name="cat3l1tau_SR", id=1005, selection="cat_3l1tau_SR", label=r"$3\ell 1\tau_h$ SR")
+    _add_category(config, name="cat3l1tau_SB", id=1006, selection="cat_3l1tau_SB", label=r"$3\ell 1\tau_h$ SB")
+    _add_category(config, name="cat2l2tau_SR", id=1007, selection="cat_2l2tau_SR", label=r"$2\ell 2\tau_h$ SR")
+    _add_category(config, name="cat2l2tau_SB", id=1008, selection="cat_2l2tau_SB", label=r"$2\ell 2\tau_h$ SB")
+    _add_category(config, name="cat1l3tau_SR", id=1009, selection="cat_1l3tau_SR", label=r"$1\ell 3\tau_h$ SR")
+    _add_category(config, name="cat1l3tau_SB", id=1010, selection="cat_1l3tau_SB", label=r"$1\ell 3\tau_h$ SB")
+    _add_category(config, name="cat4tau_SR", id=1011, selection="cat_4tau_SR", label=r"$4\tau_h$ SR")
+    _add_category(config, name="cat4tau_SB", id=1012, selection="cat_4tau_SB", label=r"$4\tau_h$ SB")
+    _add_category(config, name="cat2l0or1tau_SR_SS", id=1013, selection="cat_2l0or1tau_SR_SS", label=r"$2\ell\  \leq 1\,\tau_{h}$ SR, SS")
+    _add_category(config, name="cat2l0or1tau_SR_OS", id=1014, selection="cat_2l0or1tau_SR_OS", label=r"$2\ell\  \leq 1\,\tau_{h}$ SR, OS")
+    _add_category(config, name="cat2l0or1tau_SB_SS", id=1015, selection="cat_2l0or1tau_SB_SS", label=r"$2\ell\  \leq 1\,\tau_{h}$ SB, SS")
+    _add_category(config, name="cat2l0or1tau_SB_OS", id=1016, selection="cat_2l0or1tau_SB_OS", label=r"$2\ell\  \leq 1\,\tau_{h}$ SB, OS")
     # 3l/4l non inclusive channels ( no taus)
     _add_category(config, name="c3e", id=14, selection="cat_3e", label=config.channels.n.c3e.label)
     _add_category(config, name="c2emu", id=15, selection="cat_2emu", label=config.channels.n.c2emu.label)
@@ -51,12 +65,13 @@ def add_categories(config: od.Config) -> None:
     _add_category(config, name="ce3tau", id=30, selection="cat_e3tau", label=config.channels.n.ce3tau.label)
     _add_category(config, name="cmu3tau", id=31, selection="cat_mu3tau", label=config.channels.n.cmu3tau.label)
     _add_category(config, name="c4tau", id=32, selection="cat_4tau", label=config.channels.n.c4tau.label)
-    # di-lepton channles
-    _add_category(config, name="c2ess", id=33, selection="cat_2ess", label=config.channels.n.c2ess.label)
-    _add_category(config, name="cemuss", id=34, selection="cat_emuss", label=config.channels.n.cemuss.label)
-    _add_category(config, name="c2muss", id=35, selection="cat_2muss", label=config.channels.n.c2muss.label)
+    # 2-leptons 0 or 1 taus channels
+   _add_category(config, name="c2e0or1tau", id=33, selection="cat_c2e0or1tau", label=config.channels.n.c2e0or1tau.label)
+    _add_category(config, name="cemu0or1tau", id=34, selection="cat_cemu0or1tau", label=config.channels.n.cemu0or1tau.label)
+    _add_category(config, name="c2mu0or1tau", id=35, selection="cat_c2mu0or1tau", label=config.channels.n.c2mu0or1tau.label)
     # Loose category for BDT trainning + tight + trigmatch
     _add_category(config, name="ceormu", id=10000, selection="cat_e_or_mu", label=r"e or $\mu$", tags={"ceormu"})
+    _add_category(config, name="ceormu_bveto", id=15000, selection="cat_e_or_mu_bveto", label=r"e or $\mu$ bveto on", tags={"ceormu_bveto"})
     # bveto
     _add_category(config, name="bveto_on", id=30001, selection="cat_bveto_on", label="bveto on")
     _add_category(config, name="bveto_off", id=30002, selection="cat_bveto_off", label="bveto off")

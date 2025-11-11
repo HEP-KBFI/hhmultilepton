@@ -6,12 +6,12 @@ law run cf.PlotVariables1D \
     --datasets data_mu_e \
     --view-cmd imgcat \
     --configs 24_v15_central \
-    --workflow slurm \
     --parallel-jobs 200 \
     $1 
 
     #--version prod1 \
     #--datasets all_backgrounds \
+    #--workflow slurm \
     
     # FIXME to test out the functionality of these
     #--limit-dataset-files 1 \
