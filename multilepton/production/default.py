@@ -23,8 +23,8 @@ from multilepton.production.tau import tau_weights
 from multilepton.production.trigger_sf import trigger_weight
 from multilepton.util import IF_DATASET_HAS_LHE_WEIGHTS, IF_RUN_3
 
-ak = maybe_import("awkward")
 
+ak = maybe_import("awkward")
 top_pt_weight = cf_top_pt_weight.derive("top_pt_weight", cls_dict={"require_dataset_tag": None})
 
 
@@ -48,7 +48,7 @@ def default(self: Producer, events: ak.Array, **kwargs) -> ak.Array:
     # category ids
     events = attach_coffea_behavior(
         events,
-        collections={"HHBJet": default_coffea_collections["Jet"]},
+        collections={"Jet": default_coffea_collections["Jet"]},
     )
     events = self[category_ids](events, **kwargs)
 
@@ -104,7 +104,6 @@ def default(self: Producer, events: ak.Array, **kwargs) -> ak.Array:
 
 
 @default.init
-# dy weights
 def default_init(self: Producer, **kwargs) -> None:
     if self.produce_weights:
         weight_producers = {tau_weights, electron_weights, muon_weights, trigger_weight}
@@ -114,6 +113,5 @@ def default_init(self: Producer, **kwargs) -> None:
             weight_producers.add(dy_weights)
         self.uses |= weight_producers
         self.produces |= weight_producers
-
 
 empty = default.derive("empty", cls_dict={"produce_weights": False})

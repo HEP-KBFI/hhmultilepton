@@ -13,22 +13,20 @@ from columnflow.util import maybe_import, dev_sandbox, DotDict
 from columnflow.columnar_util import EMPTY_FLOAT, layout_ak_array, set_ak_column, full_like, flat_np_view
 from columnflow.types import Any
 
-from multilepton.util import IF_RUN_2, MET_COLUMN
-
+from multilepton.util import IF_RUN_2, MET_COLUMN, IF_NOT_NANO_V15
 
 np = maybe_import("numpy")
 ak = maybe_import("awkward")
-
 logger = law.logger.get_logger(__name__)
 
 
 @producer(
     uses={
         "event", "channel_id",
-        "Jet.{pt,eta,phi,mass,jetId,btagDeepFlavB}", IF_RUN_2("Jet.puId"),
+        "Jet.{pt,eta,phi,mass,btagDeepFlavB}", IF_NOT_NANO_V15("Jet.jetId"), IF_RUN_2("Jet.puId"),
         MET_COLUMN("{pt,phi}"),
     },
-    sandbox=dev_sandbox("bash::$MULTILEPTON_BASE/sandboxes/venv_columnar_tf.sh"),
+    sandbox=dev_sandbox("bash::$MULTILEPTON_BASE/sandboxes/venv_multilepton.sh"),
 )
 def hhbtag(
     self: Producer,

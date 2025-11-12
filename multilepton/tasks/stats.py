@@ -4,29 +4,25 @@
 Tasks to print various statistics.
 """
 
+import tabulate
 import functools
-
 import law
 
 from columnflow.tasks.framework.base import ConfigTask
 
-from multilepton.tasks.base import MULTILEPTONTask
+from multilepton.tasks.base import MultileptonTask
 from multilepton.tasks.parameters import table_format_param
 
 
-class ListDatasetStats(MULTILEPTONTask, ConfigTask, law.tasks.RunOnceTask):
+class ListDatasetStats(MultileptonTask, ConfigTask, law.tasks.RunOnceTask):
 
     single_config = True
-
     table_format = table_format_param
-
     # no version required
     version = None
 
     def run(self):
-        import tabulate
         tabulate.PRESERVE_WHITESPACE = True
-
         # color helpers
         green = functools.partial(law.util.colored, color="green")
         green_bright = functools.partial(law.util.colored, color="green", style="bright")
@@ -48,7 +44,6 @@ class ListDatasetStats(MULTILEPTONTask, ConfigTask, law.tasks.RunOnceTask):
 
         # headers
         headers = ["Dataset", "Files", "Events"]
-
         # content
         rows = []
         sum_files_s_nonres, sum_events_s_nonres = 0, 0
@@ -56,6 +51,7 @@ class ListDatasetStats(MULTILEPTONTask, ConfigTask, law.tasks.RunOnceTask):
         sum_files_b_nom, sum_events_b_nom = 0, 0
         sum_files_b_syst, sum_events_b_syst = 0, 0
         sum_files_data, sum_events_data = 0, 0
+        
         for dataset_inst in self.config_inst.datasets:
             col = get_color(dataset_inst)
             # nominal info
@@ -73,14 +69,17 @@ class ListDatasetStats(MULTILEPTONTask, ConfigTask, law.tasks.RunOnceTask):
             else:
                 sum_files_b_nom += dataset_inst.n_files
                 sum_events_b_nom += dataset_inst.n_events
+            
             # potential shifts
             for shift_name, info in dataset_inst.info.items():
                 if shift_name == "nominal" or shift_name not in self.config_inst.shifts:
                     continue
+                
                 rows.append([yellow_bright(f"  → {shift_name}"), info.n_files, info.n_events])
                 # increment sums
                 sum_files_b_syst += info.n_files
                 sum_events_b_syst += info.n_events
+        
         # overall
         sum_files_all = (
             sum_files_s_nonres + sum_files_s_res + sum_files_b_nom + sum_files_b_syst +
@@ -90,7 +89,6 @@ class ListDatasetStats(MULTILEPTONTask, ConfigTask, law.tasks.RunOnceTask):
             sum_events_s_nonres + sum_events_s_res + sum_events_b_nom + sum_events_b_syst +
             sum_events_data
         )
-
         # sums
         rows.append([bright("total signal (non-res.)"), sum_files_s_nonres, sum_events_s_nonres])
         rows.append([bright("total signal (res.)"), sum_files_s_res, sum_events_s_res])
@@ -101,7 +99,7 @@ class ListDatasetStats(MULTILEPTONTask, ConfigTask, law.tasks.RunOnceTask):
             rows.append([bright("total data"), sum_files_data, sum_events_data])
         if sum_files_all or sum_events_all:
             rows.append([bright("total"), sum_files_all, sum_events_all])
-
+        
         # print the table
         table = tabulate.tabulate(rows, headers=headers, tablefmt=self.table_format, intfmt="_")
         self.publish_message(table)

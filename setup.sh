@@ -10,52 +10,69 @@ setup_multilepton() {
     # The setup also handles the installation of the software stack via virtual environments, and
     # optionally an interactive setup where the user can configure certain variables.
     #
-    #
     # Arguments:
-    #   1. The name of the setup. "default" (which is itself the default when no name is set)
-    #      triggers a setup with good defaults, avoiding all queries to the user and the writing of
-    #      a custom setup file. See "interactive_setup()" for more info.
-    #
-    #
-    # Optinally preconfigured environment variables:
-    #   None yet.
-    #
+    #   1. A "name" of setup.
+    #   2. "minimal" or "full" setup, affect which venv from the sandbox will be sourced
     #
     # Variables defined by the setup and potentially required throughout the analysis:
     #   MULTILEPTON_BASE
     #       The absolute analysis base directory. Used to infer file locations relative to it.
     #   MULTILEPTON_SETUP
     #       A flag that is set to 1 after the setup was successful.
-
+    
+    
+    if [ $# -lt 1 ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+        echo ""
+        echo "Usage: source setup.sh <setup_name> [sandbox_type]"
+        echo ""
+        echo "Arguments:"
+        echo "  <setup_name>     Name of the setup (random name of your choice)"
+        echo "  [sandbox_type]   Optional: choose between 'minimal' (default) or 'full'"
+        echo ""
+        cf_color green "Examples:"
+        cf_color green "  source setup.sh dev            # uses minimal environment"
+        cf_color green "  source setup.sh dev full       # uses extended environment"
+        echo ""
+        cf_color cyan "'minimal'→ uses MINIMAL environment from (sandboxes/venv_multilepton.sh)"
+        cf_color cyan "'full' → uses FULL environment from (sandboxes/venv_multilepton_dev.sh)"
+        echo ""
+        return 1
+    fi
+ 
+    
     #
     # load cf setup helpers
     #
-
     local shell_is_zsh="$( [ -z "${ZSH_VERSION}" ] && echo "false" || echo "true" )"
     local this_file="$( ${shell_is_zsh} && echo "${(%):-%x}" || echo "${BASH_SOURCE[0]}" )"
     local this_dir="$( cd "$( dirname "${this_file}" )" && pwd )"
     local cf_base="${this_dir}/modules/columnflow"
     CF_SKIP_SETUP="true" source "${cf_base}/setup.sh" "" || return "$?"
+    
+    #
+    # prepare local variables
+    #
+    #forcing this 
+    if [ $# -lt 1 ]; then
+        echo "Require exactly one argument! usage : source setup.sh <setup_name>"
+        return 1
+    fi
+
+    local orig="${PWD}"
+    local setup_name="$1"
+    local which_sandbox="${2:-minimal}"   # default to "minimal" if nothing passed
+    local setup_is_default="false"
+    [ "${setup_name}" = "default" ] && setup_is_default="true"
 
     #
     # prevent repeated setups
     #
-
     cf_export_bool MULTILEPTON_SETUP
     if ${MULTILEPTON_SETUP} && ! ${CF_ON_SLURM}; then
-        >&2 echo "the HH -> Multilepton analysis was already succesfully setup"
+        >&2 echo "The HH → Multilepton analysis was already succesfully setup"
         >&2 echo "re-running the setup requires a new shell"
         return "1"
     fi
-
-    #
-    # prepare local variables
-    #
-
-    local orig="${PWD}"
-    local setup_name="${1:-default}"
-    local setup_is_default="false"
-    [ "${setup_name}" = "default" ] && setup_is_default="true"
 
     # zsh options
     if ${shell_is_zsh}; then
@@ -67,7 +84,7 @@ setup_multilepton() {
     # global variables
     # (MULTILEPTON = hhmultilepton, CF = columnflow)
     #
-
+    
     # start exporting variables
     export MULTILEPTON_BASE="${this_dir}"
     export CF_BASE="${cf_base}"
@@ -76,9 +93,17 @@ setup_multilepton() {
     export CF_SETUP_NAME="${setup_name}"
     export CF_SCHEDULER_HOST="${CF_SCHEDULER_HOST:-naf-cms14.desy.de}"
     export CF_SCHEDULER_PORT="${CF_SCHEDULER_PORT:-8088}"
-
-        # default job flavor settings (starting with naf / maxwell cluster defaults)
-    # used by law.cfg and, in turn, tasks/framework/remote.py
+    # Choose between minimal and extended sandboxes
+    if [[ "${which_sandbox}" == "minimal" || "${1}" == *"minimal"* ]]; then
+        export CF_INTERACTIVE_VENV_FILE="${CF_INTERACTIVE_VENV_FILE:-${MULTILEPTON_BASE}/sandboxes/venv_multilepton.sh}"
+        cf_color green "→ Using MINIMAL venv from (sandboxes/venv_multilepton.sh)"
+    else
+        export CF_INTERACTIVE_VENV_FILE="${CF_INTERACTIVE_VENV_FILE:-${MULTILEPTON_BASE}/sandboxes/venv_multilepton_dev.sh}"
+        cf_color green "→ Using EXTENDED venv from (sandboxes/venv_multilepton_dev.sh)"
+    fi
+    [ ! -z "${CF_INTERACTIVE_VENV_FILE}" ] && export CF_INSPECT_SANDBOX="$( basename "${CF_INTERACTIVE_VENV_FILE%.*}" )"
+    # default job flavor settings (starting with naf / maxwell cluster defaults)
+    # used by law.cfg and, in turn, modules/columnflow/tasks/framework/remote.py
     local cf_htcondor_flavor_default="cern_el9"
     local cf_slurm_flavor_default="manivald"
     local cf_slurm_partition_default="main"
@@ -98,10 +123,8 @@ setup_multilepton() {
         cf_setup_interactive_body() {
             # the flavor will be cms
             export CF_FLAVOR="cms"
-
             # query common variables
             cf_setup_interactive_common_variables
-
             # specific variables would go here
         }
         cf_setup_interactive "${CF_SETUP_NAME}" "${MULTILEPTON_BASE}/.setups/${CF_SETUP_NAME}.sh" || return "$?"
@@ -115,13 +138,11 @@ setup_multilepton() {
     #
     # common variables
     #
-
     cf_setup_common_variables || return "$?"
 
     #
     # minimal local software setup
     #
-
     cf_setup_software_stack "${CF_SETUP_NAME}" || return "$?"
 
     # ammend paths that are not covered by the central cf setup
@@ -139,7 +160,13 @@ setup_multilepton() {
     #
     # additional common cf setup steps
     #
-
+    if ! (micromamba env export | grep -q correctionlib); then
+    echo correctionlib misisng, installing...
+    micromamba install \
+        correctionlib==2.7.0 \
+        || return "$?"
+    micromamba clean --yes --all
+    fi 
     cf_setup_post_install || return "$?"
 
     # update the law config file to switch from mirrored to bare wlcg targets
@@ -151,23 +178,20 @@ setup_multilepton() {
     #
     # finalize
     #
-
     export MULTILEPTON_SETUP="true"
+     PS1="\[\033[1;35m\][multilepton_venv]\[\033[0m\] \u@\h:\W\$ "
 }
 
 multilepton_show_banner() {
     cat << EOF
-
-  $( cf_color blue_bright '||  || ||  || ')$( cf_color red_bright '          \\\   ' )$( cf_color blue_bright '||      ___  __   ====  ____  |\  |  ((  ' )
-  $( cf_color blue_bright '||==|| ||==|| ')$( cf_color red_bright 'H->WW/ZZ/𝜏𝜏))  ' )$( cf_color blue_bright '||     ||__ ||__)  ||   |  |  | \ |  \\\ ' )
-  $( cf_color blue_bright '||  || ||  || ')$( cf_color red_bright '          //  ' )$( cf_color blue_bright ' \\\===  ||__ ||     ||   |__|  |  \|   ))' )
-
+     $(cf_color blue_bright ' ╦ ╦  ╦ ╦')$(cf_color red_bright '             ')$(cf_color blue_bright '')
+     $(cf_color blue_bright ' ╠═╣  ╠═╣')$(cf_color red_bright ' (H→WW/ZZ/𝜏𝜏)')$(cf_color blue_bright ' → Multi-Leptons')
+     $(cf_color blue_bright ' ╩ ╩  ╩ ╩')$(cf_color red_bright '             ')$(cf_color blue_bright '')
 EOF
 }
 
 main() {
     # Invokes the main action of this script, catches possible error codes and prints a message.
-
     # run the actual setup
     if setup_multilepton "$@"; then
         multilepton_show_banner
@@ -175,9 +199,10 @@ main() {
         return "0"
     else
         local code="$?"
-        cf_color red "setup failed with code ${code}"
+        cf_color red "HH -> Multilepton analysis setup failed with code ${code}"
         return "${code}"
     fi
+    
 }
 
 # entry point

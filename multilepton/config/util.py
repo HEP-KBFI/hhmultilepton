@@ -1,14 +1,14 @@
 # coding: utf-8
 
 """
-Config-related object definitions and utils.
+Config-related HH-multileptons object definitions and utils.
 """
 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 
+from dataclasses import dataclass
 from order import UniqueObject, TagMixin
 from order.util import typed
 
@@ -18,14 +18,12 @@ from columnflow.types import Callable, Any, Sequence, Hashable, ClassVar
 class TriggerLeg(object):
     """
     Container class storing information about trigger legs:
-
         - *pdg_id*: The id of the object that should have caused the trigger leg to fire.
         - *min_pt*: The minimum transverse momentum in GeV of the triggered object.
         - *trigger_bits*: Integer bit mask or masks describing whether the last filter of a trigger fired.
           See https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/triggerObjects_cff.py.
           Per mask, any of the bits should match (*OR*). When multiple masks are configured, each of
           them should match (*AND*).
-
     For accepted types and conversions, see the *typed* setters implemented in this class.
     """
 
@@ -41,7 +39,6 @@ class TriggerLeg(object):
         self._pdg_id = None
         self._min_pt = None
         self._trigger_bits = None
-
         # set initial values
         self.pdg_id = pdg_id
         self.min_pt = min_pt
@@ -58,22 +55,18 @@ class TriggerLeg(object):
     def pdg_id(self, pdg_id: int | None) -> int | None:
         if pdg_id is None:
             return None
-
         if not isinstance(pdg_id, int):
             raise TypeError(f"invalid pdg_id: {pdg_id}")
-
         return pdg_id
 
     @typed
     def min_pt(self, min_pt: int | float | None) -> float | None:
         if min_pt is None:
             return None
-
         if isinstance(min_pt, int):
             min_pt = float(min_pt)
         if not isinstance(min_pt, float):
             raise TypeError(f"invalid min_pt: {min_pt}")
-
         return min_pt
 
     @typed
@@ -83,25 +76,21 @@ class TriggerLeg(object):
     ) -> list[int] | None:
         if trigger_bits is None:
             return None
-
         # cast to list
         if isinstance(trigger_bits, tuple):
             trigger_bits = list(trigger_bits)
         elif not isinstance(trigger_bits, list):
             trigger_bits = [trigger_bits]
-
         # check bit types
         for bit in trigger_bits:
             if not isinstance(bit, int):
                 raise TypeError(f"invalid trigger bit: {bit}")
-
         return trigger_bits
 
 
 class Trigger(UniqueObject, TagMixin):
     """
     Container class storing information about triggers:
-
         - *name*: The path name of a trigger that should have fired.
         - *id*: A unique id of the trigger.
         - *run_range*: An inclusive range describing the runs where the trigger is to be applied
@@ -110,11 +99,8 @@ class Trigger(UniqueObject, TagMixin):
           additional information and constraints of particular trigger legs.
         - *applies_to_dataset*: A function that obtains an ``order.Dataset`` instance to decide
           whether the trigger applies to that dataset. Defaults to *True*.
-
     For accepted types and conversions, see the *typed* setters implemented in this class.
-
     In addition, a base class from *order* provides additional functionality via mixins:
-
         - *tags*: Trigger objects can be assigned *tags* that can be checked later on, e.g. to
           describe the type of the trigger ("single_mu", "cross", ...).
     """
@@ -139,7 +125,6 @@ class Trigger(UniqueObject, TagMixin):
         self._run_range = None
         self._leg = None
         self._applies_to_dataset = None
-
         # set initial values
         self.run_range = run_range
         self.legs = legs
@@ -157,7 +142,6 @@ class Trigger(UniqueObject, TagMixin):
             raise TypeError(f"invalid name: {name}")
         if not name.startswith("HLT_"):
             raise ValueError(f"invalid name: {name}")
-
         return name
 
     @typed
@@ -167,11 +151,9 @@ class Trigger(UniqueObject, TagMixin):
     ) -> tuple[int] | None:
         if run_range is None:
             return None
-
         # cast list to tuple
         if isinstance(run_range, list):
             run_range = tuple(run_range)
-
         # run_range must be a tuple with two integers
         if not isinstance(run_range, tuple):
             raise TypeError(f"invalid run_range: {run_range}")
@@ -181,7 +163,6 @@ class Trigger(UniqueObject, TagMixin):
             raise ValueError(f"invalid run_range start: {run_range[0]}")
         if not isinstance(run_range[1], int):
             raise ValueError(f"invalid run_range end: {run_range[1]}")
-
         return run_range
 
     @typed
@@ -191,18 +172,15 @@ class Trigger(UniqueObject, TagMixin):
     ) -> dict[Hashable, TriggerLeg] | None:
         if legs is None:
             return None
-
         # cast to dict
         if isinstance(legs, TriggerLeg):
             legs = [legs]
         if isinstance(legs, (list, tuple)):
             legs = dict(enumerate(legs))
-
         # validate
         for key, leg in legs.items():
             if not isinstance(leg, TriggerLeg):
                 raise TypeError(f"invalid trigger leg with key {key}: {leg}")
-
         return legs or None
 
     @typed
@@ -212,7 +190,6 @@ class Trigger(UniqueObject, TagMixin):
                 raise TypeError(f"invalid applies_to_dataset: {func}")
             decision = True if func is None else bool(func)
             func = lambda dataset_inst: decision
-
         return func
 
     @property
@@ -237,8 +214,8 @@ class TriggerBits:
 
     v12: int | None = None
     v14: int | None = None
-
-    supported_versions: ClassVar[set[int]] = {12, 14}
+    v15: int | None = None
+    supported_versions: ClassVar[set[int]] = {12, 14, 15}
 
     def __post_init__(self) -> None:
         # versions might be strings such as "v12" that act as references

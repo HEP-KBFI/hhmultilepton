@@ -12,7 +12,6 @@ from columnflow.util import DotDict
 def add_met_filters(config: od.Config) -> None:
     """
     Adds all MET filters to a *config*.
-
     Resources:
     https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2?rev=157#UL_data
     """

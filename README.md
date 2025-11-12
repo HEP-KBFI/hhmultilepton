@@ -1,7 +1,17 @@
-# HH → Multilepton
+# HH (H → WW/ZZ/𝜏𝜏) → Multi-Leptons Analysis
+
+**Table of contents**
+- [Introduction](#introduction)
+- [Installation (first time)](#first-time-setup)
+- [Usage](#usage)
+- [Useful links](#useful-links)
+- [Contributors](#contributors)
+- [Development](#development)
+
 
 ## Introduction
-This is the code base for the Run2+Run3 iteration of the CMS HH Multilepton analysis.
+
+This is the code base for the Run2+Run3 iteration of the CMS HH Multileptons analysis.
 
 The code is forked and for now heavily based on the UHH bersion of the [HH → bb𝜏𝜏 analysis](https://github.com/uhh-cms/hh2bbtautau)
 and still very much WIP. Expect remnants from the bb𝜏𝜏 analysis, crashes and bugs, you have been warned!
@@ -13,96 +23,90 @@ Also join our channel on [mattermost](https://mattermost.web.cern.ch/cms-exp/cha
 (You will need to join the CMS team first if not done so).
 
 The code is currently developed with the Tallinn T2 (and lxplus) in mind.
-For further questions please, contact t\*\*\*\*.l\*\*\*\*@no-spam-cern.ch .
+For further questions please, contact t\*\*\*\*.l\*\*\*\*@no-spam-cern.ch.
 
 ## First time setup
 
 ```shell
-# clone the project
+# 1. clone the project
 git clone --recursive git@github.com:HEP-KBFI/hhmultilepton.git
 cd hhmultilepton
 
-# source the setup and store decisions in .setups/dev.sh (arbitrary name)
-source setup.sh dev
-
-# Decisions include storage locations, these should be set according to the system you are running the code on:
-# CF_DATA should point to a location in home (manivald) or afs (lxplus), same as CF_SOFTWARE_BASE and CF_JOB_BASE
-# CF_WLCG_CACHE_ROOT is a cache for remote files should be on /local/user (manivald) or eos (lxplus).
-
-# suggestion for lxplus setup:
-
-export CF_DATA="$CF_REPO_BASE/data"
-export CF_SOFTWARE_BASE="$CF_DATA/software"
-export CF_JOB_BASE="$CF_DATA/jobs"
-export CF_STORE_NAME="cf_store"
-export CF_STORE_LOCAL="$CF_DATA/$CF_STORE_NAME"
-export CF_WLCG_CACHE_ROOT="/eos/user/$CF_CERN_USER_FIRSTCHAR/$CF_CERN_USER/HHMultilepton_Run3/cf_scratch"
-export CF_WLCG_USE_CACHE="true"
-export CF_WLCG_CACHE_CLEANUP="false"
-export CF_CRAB_STORAGE_ELEMENT="T2_EE_Estonia"
-export CF_CRAB_BASE_DIRECTORY="/store/user/$CF_CERN_USER/cf_crab_outputs"
-
-# if space in afs is a problem, one can try
-export CF_SOFTWARE_BASE="/eos/user/$CF_CERN_USER_FIRSTCHAR/$CF_CERN_USER/HHMultilepton_Run3/software"
-
-# suggestion for manivald is the same except:
-export CF_JOB_BASE="/local/$CF_CERN_USER/HHMultilepton_Run3/jobs"
-export CF_WLCG_CACHE_ROOT="/local/$CF_CERN_USER/HHMultilepton_Run3/cf_scratch"
-
-# After first time setup, *if on manivald the estonian login node*, open the created setup file and add:
-export TMPDIR="/scratch/local/$CF_CERN_USER"
-
-# get a voms token:
-
+# 2. get a voms token
 voms-proxy-init -voms cms -rfc -valid 196:00
+
+# 3. copy the provided template to a new file (you can choose any <setup_name>):
+cp .setups/template.sh .setups/mydev.sh
+
+# 4. open .setups/mydev.sh in your editor and adjust any environment variables or paths as needed for your local setup.
+# then source the main setup script with your custom setup name:
+source setup.sh <setup_name> [sandbox_type]
+```
+```bash 
+source setup.sh --help
+Arguments:
+  <setup_name>     Name of the setup (random name of your choice)
+  [sandbox_type]   Optional: choose between 'minimal' (default) or 'full'
+Examples:
+  source setup.sh mydev            # uses 'minimal' environment from (sandboxes/venv_multilepton.sh)
+  source setup.sh mydev full       # uses 'full' environment from (sandboxes/venv_multilepton_dev.sh) 
 ```
 
-<img width="1336" height="506" alt="image" src="https://github.com/user-attachments/assets/29e6f810-e273-4b2e-9a80-02427e228298" />
+Note: If you prefer not to use the provided template, you can still activate the environment manually by running:
+source setup.sh `<setup_name>`
+In this case, `<setup_name>` should not already exist under the `.setups/` directory.
+When you run the command, the setup script will guide you interactively, prompting you to enter the required environment variables (as `export` commands). Once completed, these settings will be automatically saved to `.setups/<setup_name>.sh`.
 
 
-Code can now be run but first storage locations for the tasks outputs should be checked as configured [here](https://github.com/HEP-KBFI/hhmultilepton/blob/master/law_outputs.cfg#L26-L90)
-Currently outputs point to the user store of the T2 on manivald so that outputs are also accessible remotely, but we will likely adapt this over time depending on the output.
+<img width="1336" height="506" alt="image" src="img.png" />
+
+
+Code can now be run but first storage locations for the tasks outputs should be checked as configured [here](https://github.com/HEP-KBFI/hhmultilepton/blob/master/law_outputs.cfg#L26-L90). Currently outputs point to the user store of the `T2_EE_Estonia on manivald` so that outputs are also accessible remotely, but we will likely adapt this over time depending on the output.
 I.e large outputs available in a remote reachable location, smaller ones on local stores. Larger ones likely also split by user/cluster so that central versions can be reused.
 
-*Important* For development on lxplus *i strongly * advise to change wlcg_fs_manivald to wlcg_fs_cernbox in the beginning.
+**For development on lxplus "i strongly" advise to change `wlcg_fs_manivald` to `wlcg_fs_cernbox` in the beginning.**
 
-After this is set, try to run on signal locally:
+## Usage 
+
+1. Setup your enviorement (**always**):
+
+```shell
+voms-proxy-init -voms cms -rfc -valid 196:00
+
+# source the setup and export env in the sorted file " .setups/mydev.sh " in this case
+source setup.sh mydev
+```
+
+2. Try to run on 1 signal, 1 backgound and 1 data locally:
 
 ```shell
 law run cf.PlotVariables1D \
     --version test \
     --producers default \
     --variables nmu \
-    --datasets hh_ggf_htt_hvv_kl1_kt1_powheg \
+    --datasets hh_ggf_htt_hvv_kl1_kt1_powheg,zz_pythia,data_e_c  \
 ```
 
-And if this runs on background via slurm/condor
+3. And if the above run sucessfully, you can proceed to submit jobs via slurm/condor adding 
 
 ```shell
-law run cf.PlotVariables1D \
-    --version test \
-    --producers default \
-    --variables nmu \
-    --datasets zz_pythia \
-    --workflow slurm \
+    --workflow slurm \     # or
+    --workflow htcondor \  # or
+    --workflow crab \      # to be tested!?
 ```
-
-or with
-
-```shell
-    --workflow htcondor \
-```
-
-crab to be tested.
 
 ## Documentation
-TODO but a general overview can be found in these slides: https://indico.cern.ch/event/1580193/contributions/6660044/attachments/3121091/5534653/multilep%20framework.pdf
+
+- Lives here: https://gitlab.cern.ch/hh-multileptons-full-analysis/hh-multileptons-doc
+- Talks:
+    - slides: https://indico.cern.ch/event/1580193/contributions/6660044/attachments/3121091/5534653/multilep%20framework.pdf
 
 ## 🙏 Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+
 <table>
   <tbody>
     <tr>
@@ -114,9 +118,7 @@ TODO but a general overview can be found in these slides: https://indico.cern.ch
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
-
 <!-- ALL-CONTRIBUTORS-LIST:END -->
-
 
 ## Useful links
 
@@ -127,13 +129,11 @@ TODO but a general overview can be found in these slides: https://indico.cern.ch
   - [GrASP](https://cms-pdmv-prod.web.cern.ch/grasp/)
   - [XSDB](https://xsdb-temp.app.cern.ch)
   - [DAS](https://cmsweb.cern.ch/das)
-NanoAOD:
+NanoAOD
   - [Nano documentation](https://gitlab.cern.ch/cms-nanoAOD/nanoaod-doc)
   - [Correctionlib files](https://gitlab.cern.ch/cms-nanoAOD/jsonpog-integration)
-- JME
-  - [Docs](https://cms-jerc.web.cern.ch)
-- BTV
-  - [Docs](https://btv-wiki.docs.cern.ch)
+- [JME](https://cms-jerc.web.cern.ch)
+- [BTV](https://btv-wiki.docs.cern.ch)
 - TAU
   - [Run 2 Twiki](https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun2)
   - [Run 3 Twiki](https://twiki.cern.ch/twiki/bin/viewauth/CMS/TauIDRecommendationForRun3)
@@ -143,6 +143,6 @@ NanoAOD:
 
 - Source hosted at [GitHub](https://github.com/HEP-KBFI/hhmultilepton)
 - Report issues, questions, feature requests on [GitHub Issues](https://github.com/HEP-KBFI/hhmultilepton/issues)
-- Ideally also ping us on MM
+- Ideally also ping us on [mattermost](https://mattermost.web.cern.ch/cms-exp/channels/hh-multilepton-run3).
 - For new features open a new branch before merging into master, ask for a code review by a felllow contributor and dont forget linting!
-- Happy coding :)
+- Happy coding 😊

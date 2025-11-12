@@ -3,6 +3,7 @@
 """
 Jet selection methods.
 """
+
 from __future__ import annotations
 
 from operator import or_
@@ -10,16 +11,16 @@ from functools import reduce
 
 import law
 
+from columnflow.util import maybe_import
 from columnflow.selection import Selector, SelectionResult, selector
 from columnflow.production.cms.jet import jet_id, fatjet_id
 from columnflow.columnar_util import (
     EMPTY_FLOAT, set_ak_column, sorted_indices_from_mask, mask_from_indices, flat_np_view, full_like,
 )
-from columnflow.util import maybe_import
 
-from multilepton.production.hhbtag import hhbtag
 from multilepton.selection.lepton import trigger_object_matching
-from multilepton.util import IF_RUN_2
+from multilepton.util import IF_RUN_2, IF_NOT_NANO_V15
+
 
 np = maybe_import("numpy")
 ak = maybe_import("awkward")
@@ -27,17 +28,19 @@ ak = maybe_import("awkward")
 
 @selector(
     uses={
-        jet_id, fatjet_id, hhbtag,
+        jet_id, fatjet_id,
         "fired_trigger_ids", "TrigObj.{pt,eta,phi}",
-        "Jet.{pt,eta,phi,mass,jetId}", IF_RUN_2("Jet.puId"),
-        "FatJet.{pt,eta,phi,mass,msoftdrop,jetId,subJetIdx1,subJetIdx2}",
-        "SubJet.{pt,eta,phi,mass,btagDeepB}",
+        "Jet.{pt,eta,phi,mass}", IF_NOT_NANO_V15("Jet.jetId"), IF_RUN_2("Jet.puId"),
+        "FatJet.{pt,eta,phi,mass,msoftdrop,subJetIdx1,subJetIdx2}", IF_NOT_NANO_V15("FatJet.jetId"),
+        "SubJet.{pt,eta,phi,mass}", IF_NOT_NANO_V15("SubJet.btagDeepB"),
     },
     produces={
-        hhbtag,
+        # hhbtag,
         "Jet.hhbtag", "matched_trigger_ids",
     },
 )
+
+
 def jet_selection(
     self: Selector,
     events: ak.Array,
@@ -47,7 +50,6 @@ def jet_selection(
 ) -> tuple[ak.Array, SelectionResult]:
     """
     Jet selection based on ultra-legacy recommendations.
-
     Resources:
     https://twiki.cern.ch/twiki/bin/view/CMS/JetID?rev=107#nanoAOD_Flags
     https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL?rev=15#Recommendations_for_the_13_T_AN1
@@ -55,7 +57,7 @@ def jet_selection(
     https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookNanoAOD?rev=100#Jets
     """
     is_2016 = self.config_inst.campaign.x.year == 2016
-    ch_tautau = self.config_inst.get_channel("tautau")
+    ch_tautau = self.config_inst.get_channel("ctautau")
 
     # local jet index
     li = ak.local_index(events.Jet)
@@ -67,11 +69,13 @@ def jet_selection(
     #
     # default jet selection
     #
-
+    # ak.all(events.Jet.metric_table(lepton_results.x.leading_taus) > 0.5, axis=2)
     # common ak4 jet mask for normal and vbf jets
     ak4_mask = (
         (events.Jet.jetId == 6) &  # tight plus lepton veto
-        ak.all(events.Jet.metric_table(lepton_results.x.leading_taus) > 0.5, axis=2)
+        ak.all(events.Jet.metric_table(events.Tau[lepton_results.x.taus]) > 0.5, axis=2) &
+        ak.all(events.Jet.metric_table(events.Muon[lepton_results.x.mus]) > 0.5, axis=2) &
+        ak.all(events.Jet.metric_table(events.Electron[lepton_results.x.eles]) > 0.5, axis=2)
     )
 
     # puId for run 2
@@ -88,13 +92,19 @@ def jet_selection(
         (abs(events.Jet.eta) < 2.5)
     )
 
+    # default jets (no cleaning)
+    default_mask_noclean = (
+        (events.Jet.pt > 5) &
+        (abs(events.Jet.eta) < 2.5)
+     )
+ 
     #
-    # hhb-jet identification
+    # FIXME need to go hhb-jet identification
     #
-
-    # get the hhbtag values per jet per event
-    events = self[hhbtag](events, default_mask, lepton_results.x.lepton_pair, **kwargs)
-    hhbtag_scores = events.hhbtag_score
+    # events = self[hhbtag](events, default_mask, lepton_results.x.lepton_pair, **kwargs)
+    # hhbtag_scores = events.hhbtag_score
+    # just set hhbtag to zero for now, later remove
+    hhbtag_scores = 0 * events.Jet.pt
 
     # create a mask where only the two highest scoring hhbjets are selected
     score_indices = ak.argsort(hhbtag_scores, axis=1, ascending=False)
@@ -108,7 +118,6 @@ def jet_selection(
     # matching should be done and should therefore be ignored.
 
     false_mask = full_like(events.event, False, dtype=bool)
-
     # create mask for tautau events that fired and matched tautau trigger
     tt_match_mask = (
         (events.channel_id == ch_tautau.id) &
@@ -129,7 +138,7 @@ def jet_selection(
             false_mask,
         ), axis=1)
     )
-
+    
     # create mask for tautau events that matched taus in vbf trigger
     ttv_mask = (
         (events.channel_id == ch_tautau.id) &
@@ -160,7 +169,6 @@ def jet_selection(
             (hhbjet_mask[ttj_mask] != EMPTY_FLOAT) &
             (events.Jet.pt[ttj_mask] > 60.0)  # ! Note: hardcoded value
         )
-
         # check which jets can be matched to any of the jet legs
         matching_mask = full_like(events.Jet.pt[ttj_mask], False, dtype=bool)
         for trigger, _, leg_masks in trigger_results.x.trigger_data:
@@ -173,7 +181,7 @@ def jet_selection(
                     matching_mask |
                     trigger_matching_mask
                 )
-
+                
                 # update trigger matching mask with constraints on the jets
                 trigger_matching_mask = (
                     trigger_matching_mask &
@@ -202,7 +210,6 @@ def jet_selection(
 
         # constrain to jets with a score and a minimum pt corresponding to the trigger jet leg
         matching_mask = (
-            matching_mask &
             constraints_mask_matched_hhbjet
         )
 
@@ -247,7 +254,6 @@ def jet_selection(
         # check if the pt-leading jet of the two hhbjets is matched for any tautaujet trigger
         # and fold back into hhbjet_mask
         leading_matched = ak.fill_none(ak.firsts(matching_mask[sel_hhbjet_mask][pt_sorting_indices], axis=1), False)
-
         # cast full leading matched mask to event mask
         full_leading_matched_all_events = full_like(events.event, False, dtype=bool)
         flat_full_leading_matched_all_events = flat_np_view(full_leading_matched_all_events)
@@ -266,17 +272,19 @@ def jet_selection(
     #
     # fat jets
     #
-
     fatjet_mask = (
         (events.FatJet.jetId == 6) &  # tight plus lepton veto
         (events.FatJet.msoftdrop > 30.0) &
         (events.FatJet.pt > 250.0) &  # ParticleNet not trained for lower values
         (abs(events.FatJet.eta) < 2.5) &
-        ak.all(events.FatJet.metric_table(lepton_results.x.leading_taus) > 0.8, axis=2) &
+        ak.all(events.FatJet.metric_table(events.Tau[lepton_results.x.taus]) > 0.8, axis=2) &
+        ak.all(events.FatJet.metric_table(events.Muon[lepton_results.x.mus]) > 0.8, axis=2) &
+        ak.all(events.FatJet.metric_table(events.Electron[lepton_results.x.eles]) > 0.8, axis=2) &
         (events.FatJet.subJetIdx1 >= 0) &
         (events.FatJet.subJetIdx2 >= 0)
     )
-
+    
+    # ak.all(events.FatJet.metric_table(lepton_results.x.leading_taus) > 0.8, axis=2) &
     # store fatjet and subjet indices
     fatjet_indices = ak.local_index(events.FatJet.pt)[fatjet_mask]
     subjet_indices = ak.concatenate(
@@ -295,7 +303,6 @@ def jet_selection(
     #
     # vbf jets
     #
-
     vbf_mask = (
         ak4_mask &
         (events.Jet.pt > 20.0) &
@@ -342,7 +349,7 @@ def jet_selection(
         # update the "ttv only" mask
         cross_vbf_masks = [events.matched_trigger_ids == tid for tid in self.trigger_ids_ttv]
         cross_vbf_mask = ak.all(reduce(or_, cross_vbf_masks), axis=1)
-
+        
         # remove all events that fired only vbf trigger but were not matched or
         # that fired vbf and tautaujet triggers and matched the taus but not the jets
         ttv_fired_v_not_matched = (
@@ -402,9 +409,9 @@ def jet_selection(
     #
     # final selection and object construction
     #
-
     # pt sorted indices to convert mask
     jet_indices = sorted_indices_from_mask(default_mask, events.Jet.pt, ascending=False)
+    jet_indices_no_clean = sorted_indices_from_mask(default_mask_noclean, events.Jet.pt, ascending=False)
 
     # get indices of the two hhbjets
     hhbjet_indices = sorted_indices_from_mask(hhbjet_mask, hhbtag_scores, ascending=False)
@@ -420,16 +427,17 @@ def jet_selection(
     # perform a cut on ≥1 jet and all other cuts first, and then cut on ≥2, resulting in an
     # additional, _skippable_ step
     jet_sel = (
-        (ak.sum(default_mask, axis=1) >= 1) &
+        (ak.sum(default_mask, axis=1) >= 0) & #dont require jets at the moment, will be added on per channel basis
         match_at_least_one_trigger
         # add additional cuts here in the future
     )
-    jet_sel2 = jet_sel & (ak.sum(default_mask, axis=1) >= 2)
+    #jet_sel2 = jet_sel & (ak.sum(default_mask, axis=1) >= 2)
 
     # some final type conversions
     jet_indices = ak.values_astype(ak.fill_none(jet_indices, 0), np.int32)
-    hhbjet_indices = ak.values_astype(hhbjet_indices, np.int32)
-    non_hhbjet_indices = ak.values_astype(ak.fill_none(non_hhbjet_indices, 0), np.int32)
+    jet_indices_no_clean = ak.values_astype(ak.fill_none(jet_indices_no_clean, 0), np.int32)
+    #hhbjet_indices = ak.values_astype(hhbjet_indices, np.int32)
+    #non_hhbjet_indices = ak.values_astype(ak.fill_none(non_hhbjet_indices, 0), np.int32)
     fatjet_indices = ak.values_astype(fatjet_indices, np.int32)
     vbfjet_indices = ak.values_astype(ak.fill_none(vbfjet_indices, 0), np.int32)
 
@@ -440,7 +448,7 @@ def jet_selection(
     result = SelectionResult(
         steps={
             "jet": jet_sel,
-            "jet2": jet_sel2,
+            #"jet2": jet_sel2,
             # the btag weight normalization requires a selection with everything but the bjet
             # selection, so add this step here
             # note: there is currently no b-tag discriminant cut at this point, so skip it
@@ -450,8 +458,9 @@ def jet_selection(
         objects={
             "Jet": {
                 "Jet": jet_indices,
-                "HHBJet": hhbjet_indices,
-                "NonHHBJet": non_hhbjet_indices,
+                "NonCleanedJet": jet_indices_no_clean,
+                #"HHBJet": hhbjet_indices,
+                #"NonHHBJet": non_hhbjet_indices,
                 "VBFJet": vbfjet_indices,
             },
             "FatJet": {
@@ -469,7 +478,6 @@ def jet_selection(
             "n_central_jets": ak.num(jet_indices, axis=1),
         },
     )
-
     return events, result
 
 

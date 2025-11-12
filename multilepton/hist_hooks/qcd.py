@@ -5,7 +5,6 @@ Histogram hooks for QCD estimation.
 """
 
 from __future__ import annotations
-
 from collections import defaultdict
 
 import law
@@ -17,8 +16,6 @@ from columnflow.types import Any
 
 np = maybe_import("numpy")
 hist = maybe_import("hist")
-
-
 logger = law.logger.get_logger(__name__)
 
 
@@ -213,7 +210,6 @@ def add_hooks(analysis_inst: od.Analysis) -> None:
                     f"could not find index of bin on 'category' axis of qcd histogram {qcd_hist} for category "
                     f"{group.os_iso}",
                 )
-
         return hists
 
     def qcd_estimation(
