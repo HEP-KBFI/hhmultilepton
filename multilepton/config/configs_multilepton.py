@@ -226,6 +226,8 @@ def convert_dataset_to_process(dataset, campaign, all_processes_from_campaign):
     for production in ['_powheg', '_amcatnlo', '_pythia', '_madgraph']:
         if production in dataset:
             process = dataset.replace(production, '')
+            if process in ['st_schannel_t_lep_4f', 'st_schannel_tbar_lep_4f', 'www_4f', 'wwz_4f']:
+                process = process.replace('_4f','')
     # Find matching process and return its id
     id = None
     for proc in all_processes_from_campaign:
