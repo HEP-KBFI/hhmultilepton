@@ -159,7 +159,7 @@ def bTagWorkingPoints(year, run, campaign):
     getfromyear = year
     if year == 2024: getfromyear = 2023 # still missing FIXME once they are updated by BTV-POG
     fileName = law.LocalFileTarget(localizePOGSF(getfromyear, "BTV", "btagging.json.gz"))
-    logger.info(f'... getting working points and discr cuts from : {fileName}')
+    logger.info(f'Getting btagging working points and discriminator cuts from : {fileName}')
     ceval = load_correction_set(fileName)
     btagging = nested_dict()
     if run == 2:
@@ -293,6 +293,7 @@ def add_config(
         cfg.x.luminosity = Number(lumi_value, lumi_unc)
         return cfg 
 
+
     def ConfigureMuons(cfg, run, year, campaign):
         if run == 2:
             cfg.x.muon_sf_names = MuonSFConfig(correction="NUM_TightRelIso_DEN_TightIDandIPCut")
@@ -305,7 +306,8 @@ def add_config(
             cfg.x.cross_trigger_muon_mc_effs_cfg = MuonSFConfig("NUM_IsoMu20_DEN_CutBasedIdTight_and_PFIsoTight_MCeff")
         return cfg 
 
-    def ConfigureElectrons(cfg, run, year, campaign):
+
+    def ConfigureElectrons(cfg, run, year, campaign, scale_compound=False, smear_syst_compound=False):
         """ Run 2: https://twiki.cern.ch/twiki/bin/view/CMS/EgammaULTagAndProbe
             Run 3: https://twiki.cern.ch/twiki/bin/view/CMS/EgammaRun3Recommendations
         """
@@ -322,6 +324,8 @@ def add_config(
                 }
         e_postfix = EGMcorrection.get(f"{year}{campaign.x.postfix}")
         e_prefix = 'UL-' if run == 2 else ''
+        scalecorr = 'Compound_Ele' if scale_compound else 'ElePTsplit'
+        smearcorr = 'Compound_Ele' if smear_syst_compound else 'ElePTsplit'
         
         cfg.x.electron_sf_names = ElectronSFConfig(
             correction=f"{e_prefix}Electron-ID-SF",
@@ -353,13 +357,14 @@ def add_config(
         if run ==3:
             # electron scale and smearing (eec and eer)
             cfg.x.ess = EGammaCorrectionConfig(
-                scale_correction_set=f"EGMScale_ElePTsplit_{year}",
-                scale_compound=False,
-                smear_syst_correction_set=f"EGMSmearAndSyst_ElePTsplit_{year}",
-                smear_syst_compound=False,
+                scale_correction_set=f"EGMScale_{scalecorr}_{year}{e_tag}",
+                scale_compound=scale_compound,
+                smear_syst_correction_set=f"EGMSmearAndSyst_{smearcorr}_{year}{e_tag}",
+                smear_syst_compound=smear_syst_compound,
                 systs=["scale_down", "scale_up", "smear_down", "smear_up"],
             ) 
         return cfg
+
 
     def ConfigureTaus(cfg, run, campaign):
         """
@@ -412,9 +417,10 @@ def add_config(
         cfg.x.tau_trigger_corrector_cclub = "tauTriggerSF"
         return cfg
 
-    def ConfigureJets(year, run, campaign):
+
+    def ConfigureJets(cfg, year, run, campaign):
         """
-        Configure JEC and JER campaigns and versions for Run 2 and Run 3.
+        Configure Jet Energy Corrections (JEC) and Jet Energy Resolution (JER)
         References:
             - Run 2: https://cms-jerc.web.cern.ch/Recommendations/#run-2
                       https://twiki.cern.ch/twiki/bin/view/CMS/JECDataMC?rev=204
@@ -422,12 +428,14 @@ def add_config(
             - Run 3: https://cms-jerc.web.cern.ch/Recommendations/#2022
         """
         newyear = year%100
+        jec_uncertainty_sources = analysis_data['jec_sources']
+        
         if run == 2:
             jec_version_map = {2016: "V7", 2017: "V5", 2018: "V5"}
             jer_version_map = {2016: "V3", 2017: "V2", 2018: "V2"}
             jec_campaign = f"Summer19UL{newyear}{campaign.x.postfix}"
             jer_campaign = f"Summer{'20' if year == 2016 else '19'}UL{newyear}{campaign.x.postfix}"
-            return {
+            jecjerdb = {
                 "jec_campaign": jec_campaign,
                 "jec_version": jec_version_map[year],
                 "jer_campaign": jer_campaign,
@@ -435,6 +443,7 @@ def add_config(
                 "jet_type": "AK4PFchs",
                 "data_per_era": False,
             }
+
         elif run == 3:
             jerc_postfix = {
                 (2022, ""): "_22Sep2023",
@@ -462,7 +471,7 @@ def add_config(
             # Add special Run fragment for 2023
             if year == 2023:
                 jer_campaign += f"_Run{'Cv1234' if campaign.has_tag('preBPix') else 'D'}"
-            return {
+            jecjerdb = {
                 "jec_campaign": jec_campaign,
                 "jec_version": jec_version_map[(year, campaign.x.postfix)],
                 "jer_campaign": jer_campaign,
@@ -470,6 +479,47 @@ def add_config(
                 "jet_type": "AK4PFPuppi",
                 "data_per_era": year == 2022,  # 2022 JEC depends on era
             }
+        
+        if year in [2024, 2022]:
+            for src in ["TimeRunA", "TimeRunB", "TimeRunC", "TimeRunD"]:
+                if src in jec_uncertainty_sources:
+                    jec_uncertainty_sources.remove(src)
+
+        cfg.x.jec = DotDict.wrap({
+            "Jet": {
+                "campaign": jecjerdb["jec_campaign"],
+                "version": jecjerdb["jec_version"],
+                "data_per_era": jecjerdb["data_per_era"],
+                "jet_type": jecjerdb["jet_type"],
+                "levels": ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"],
+                "levels_for_type1_met": ["L1FastJet"],
+                "uncertainty_sources": jec_uncertainty_sources,
+            },
+        })
+
+        cfg.x.jer = DotDict.wrap({
+            "Jet": {
+                "campaign": jecjerdb["jer_campaign"],
+                "version": jecjerdb["jer_version"],
+                "jet_type": jecjerdb["jet_type"],
+            },
+        })
+
+        cfg.x.jet_id = JetIdConfig(
+            corrections={
+                "AK4PUPPI_Tight": 2,
+                "AK4PUPPI_TightLeptonVeto": 3,
+            })
+
+        cfg.x.fatjet_id = JetIdConfig(
+            corrections={
+                "AK8PUPPI_Tight": 2,
+                "AK8PUPPI_TightLeptonVeto": 3,
+            })
+
+        cfg.x.jet_trigger_corrector = "jetleg60"
+        return cfg
+
 
     def ConfigureLFNS(cfg, limit_dataset_files=None):
         """
@@ -523,9 +573,11 @@ def add_config(
         ]
         return cfg
 
+
     def _names_from_tag(tag):
         return [s.name for s in cfg.shifts if s.has_tag(tag)]
-    
+
+
     def get_datasets_by_tag(tag):
         """Return converted dataset processes matching a given tag."""
         return [
@@ -533,6 +585,7 @@ def add_config(
             for dataset in cfg.datasets
             if dataset.has_tag(tag)
         ]
+
 
     def prune_datasets_node(node):
         """Recursively clean cmsdb lists, keeping only valid datasets."""
@@ -552,10 +605,12 @@ def add_config(
             return pruned_list
         return node
         
+
     def add_external(name, value):
         if isinstance(value, dict):
             value = DotDict.wrap(value)
         cfg.x.external_files[name] = value
+
 
     def register_shift_pair(cfg, base_name, base_id, aliases=None, tags=None, aux=None, step=1):
         """Register up/down shifts with optional aliases, tags, and aux data."""
@@ -563,16 +618,18 @@ def add_config(
         cfg.add_shift(name=f"{base_name}_down", id=base_id + step, type="shape", tags=tags or set(), aux=aux)
         if aliases:
             add_shift_aliases(cfg, base_name, aliases)
-    
+
+
     def find_match_era(**kwargs):
         """Helper to enable processes/datasets only for specific era."""
         return (
             (kwargs.get('run') is None or campaign.x.run in law.util.make_set(kwargs.get('run'))) and
-            (kwargs.get('year') is None or campaign.x.year in law.util.make_set(kwargs.get('year'))) and
-            (kwargs.get('postfix') is None or campaign.x.postfix in law.util.make_set(kwargs.get('postfix'))) and
             (kwargs.get('tag') is None or campaign.has_tag(kwargs.get('tag'), mode=any)) and
-            (kwargs.get('nano') is None or campaign.x.version in law.util.make_set(kwargs.get('nano')))
+            (kwargs.get('year') is None or campaign.x.year in law.util.make_set(kwargs.get('year'))) and
+            (kwargs.get('nano') is None or campaign.x.version in law.util.make_set(kwargs.get('nano'))) and
+            (kwargs.get('postfix') is None or campaign.x.postfix in law.util.make_set(kwargs.get('postfix')))
         )
+
 
     def in_era(values=None, **kwargs):
         """
@@ -581,9 +638,11 @@ def add_config(
         """
         return list(filter(bool, values or [])) if find_match_era(**kwargs) else []
     
+
     def not_in_era(**kwargs):
         return not bool(in_era(**kwargs))
  
+
     def in_config(names=None, ids=None, values=None):
         """
         Return a filtered list of values if cfg.id is in the provided ids,
@@ -592,13 +651,15 @@ def add_config(
         """
         if names: return list(filter(bool, values or [])) if cfg.name in names else []
         elif ids: return list(filter(bool, values or [])) if cfg.id in ids else []
-    
+ 
+
     def not_in_config(**kwargs):
         return not bool(in_config(**kwargs))
             
     #=============================================
     # configure some default objects
     #=============================================
+    TopPtWeightFromTheory = False
     cfg.x.default_selector_steps = "all"
     cfg.x.default_calibrator = "default"
     cfg.x.default_selector = "default"
@@ -614,15 +675,16 @@ def add_config(
     
     btagJECsources = analysis_data.get("btag_sf_jec_sources", [])
     btagJECsources += [f"Absolute_{year}", f"BBEC1_{year}", f"EC2_{year}", f"HF_{year}", f"RelativeSample_{year}", ""] 
-    cfg.x.btag_working_points = bTagWorkingPoints(year, run, campaign)
     cfg.x.btag_sf_jec_sources = btagJECsources
+    cfg.x.btag_working_points = bTagWorkingPoints(year, run, campaign)
     
     ConfigureLuminosity(cfg, campaign, year, analysis_data)
+    ConfigureLFNS(cfg, limit_dataset_files)
     ConfigureTaus(cfg, run, campaign)
     ConfigureElectrons(cfg, run, year, campaign)
     ConfigureMuons(cfg, run, year, campaign)
-    ConfigureLFNS(cfg, limit_dataset_files)
-    
+    ConfigureJets(cfg, year, run, campaign)
+
     #=============================================
     # processes and datasets - using YAML configuration
     #=============================================
@@ -826,50 +888,6 @@ def add_config(
     setup_plot_styles(cfg, analysis_data.get('plot_defaults',{})) 
 
     #=============================================
-    # Jet Energy Corrections (JEC) and Jet Energy Resolution (JER)
-    #=============================================
-    jecjerdb = ConfigureJets(year, run, campaign)
-    jec_uncertainty_sources = analysis_data['jec_sources']
-    if year == 2024:
-        for src in ["TimeRunA", "TimeRunB", "TimeRunC", "TimeRunD"]:
-            if src in jec_uncertainty_sources:
-                jec_uncertainty_sources.remove(src)
-
-    cfg.x.jec = DotDict.wrap({
-        "Jet": {
-            "campaign": jecjerdb["jec_campaign"],
-            "version": jecjerdb["jec_version"],
-            "data_per_era": jecjerdb["data_per_era"],
-            "jet_type": jecjerdb["jet_type"],
-            "levels": ["L1FastJet", "L2Relative", "L2L3Residual", "L3Absolute"],
-            "levels_for_type1_met": ["L1FastJet"],
-            "uncertainty_sources": jec_uncertainty_sources, 
-        },
-    })
-    
-    cfg.x.jer = DotDict.wrap({
-        "Jet": {
-            "campaign": jecjerdb["jer_campaign"],
-            "version": jecjerdb["jer_version"],
-            "jet_type": jecjerdb["jet_type"],
-        },
-    })
-    
-    cfg.x.jet_id = JetIdConfig( 
-        corrections={
-            "AK4PUPPI_Tight": 2,
-            "AK4PUPPI_TightLeptonVeto": 3,
-        })
-
-    cfg.x.fatjet_id = JetIdConfig(
-        corrections={
-            "AK8PUPPI_Tight": 2,
-            "AK8PUPPI_TightLeptonVeto": 3,
-        })
-    
-    cfg.x.jet_trigger_corrector = "jetleg60" 
-    
-    #=============================================
     # met settings
     #=============================================
     if run == 2:
@@ -920,24 +938,26 @@ def add_config(
     # https://twiki.cern.ch/twiki/bin/view/CMS/TopPtReweighting?rev=31
     #=============================================
     # theory-based method preferred
-    # cfg.x.top_pt_weight = TopPtWeightFromTheoryConfig(params={
-    #     "a": 0.103,
-    #     "b": -0.0118,
-    #     "c": -0.000134,
-    #     "d": 0.973,
-    # })
-    # data-based method preferred
-    cfg.x.top_pt_weight = TopPtWeightFromDataConfig(
-        params={
-            "a": 0.0615,
-            "a_up": 0.0615 * 1.5,
-            "a_down": 0.0615 * 0.5,
-            "b": -0.0005,
-            "b_up": -0.0005 * 1.5,
-            "b_down": -0.0005 * 0.5,
-        },
-        pt_max=500.0,
-    )
+    if TopPtWeightFromTheory:
+        cfg.x.top_pt_weight = TopPtWeightFromTheoryConfig(params={
+             "a": 0.103,
+             "b": -0.0118,
+             "c": -0.000134,
+             "d": 0.973,
+        })
+    else:
+        # data-based method preferred
+        cfg.x.top_pt_weight = TopPtWeightFromDataConfig(
+            params={
+                "a": 0.0615,
+                "a_up": 0.0615 * 1.5,
+                "a_down": 0.0615 * 0.5,
+                "b": -0.0005,
+                "b_up": -0.0005 * 1.5,
+                "b_down": -0.0005 * 0.5,
+            },
+            pt_max=500.0,
+        )
 
     #=============================================
     # dy reweighting and recoil 
@@ -1124,10 +1144,12 @@ def add_config(
     if year == 2024: 
         getfromyear = 2023 # these corrections are still missing for 2024 workaround with 2023 preBPix for now
         tau_pog_suffix = "preBPix"
+        add_external("met_phi_corr", (f"{os.path.dirname(os.path.abspath(__file__))}/../data/{metPOGJsonFile}", "v1"))
+    else:
+        add_external("met_phi_corr", (localizePOGSF(getfromyear, "JME", f"{metPOGJsonFile}"), "v1"))
     add_external("btag_sf_corr", (localizePOGSF(getfromyear, "BTV", "btagging.json.gz"), "v1"))
     add_external("tau_sf", (localizePOGSF(getfromyear, "TAU", f"{tauPOGJsonFile}"), "v1"))
     add_external("pu_sf", (localizePOGSF(getfromyear, "LUM", "puWeights.json.gz"), "v1"))
-    add_external("met_phi_corr", (f"{os.path.dirname(os.path.abspath(__file__))}/../data/{metPOGJsonFile}", "v1"))
     add_external("trigger_sf", Ext(f"{os.path.dirname(os.path.abspath(__file__))}/../data/TriggerScaleFactors/{getfromyear}{tau_pog_suffix}",
         subpaths=DotDict(
             muon="temporary_MuHlt_abseta_pt.json.gz",
